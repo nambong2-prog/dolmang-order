@@ -672,11 +672,11 @@ async function saveOrdersToGitHub(){
 }
 function scheduleOrdersSave(){
   clearTimeout(gasOrderTimer);
-  gasOrderTimer=setTimeout(saveOrdersToGAS,3000);
+  gasOrderTimer=setTimeout(saveOrdersToGitHub,3000);
 }
 
 
-async async function loadOrdersFromGitHub(){
+async function loadOrdersFromGitHub(){
   const btn=document.getElementById('btnGasLoad');
   if(btn){btn.disabled=true;btn.textContent='불러오는 중...';}
   try{
@@ -967,7 +967,7 @@ function addManualOrder(){
   toast('✅ '+name+' 발주방 주문 추가됨');
 }
 
-function delRow0(i){orders0.splice(i,1);renderPreview0();saveOrdersToGAS();}
+function delRow0(i){orders0.splice(i,1);renderPreview0();saveOrdersToGitHub();}
 function downloadBaljoo(){
   if(!orders0.length){toast('❌ 발주할 주문이 없습니다.');return;}
   const HDR=['보내는사람(지정)','우편번호(지정)','주소(지정)','전화번호1(지정)','전화번호2(지정)',
@@ -1201,7 +1201,7 @@ function addToSettlement(){
     orders0=orders0.filter(o=>!addedIds.has(String(o.orderId)));
     if(orders0.length===0){rawWb0s={};hide('preview0');}
     else renderPreview0();
-    saveOrdersToGAS();  // 즉시 GAS 동기화
+    saveOrdersToGitHub();  // 즉시 GAS 동기화
     toast('✅ '+added+'건 정산 추가 완료, 발주목록에서 제거됨');
     switchTab(2);
   }else{
