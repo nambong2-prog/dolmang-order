@@ -1,0 +1,1788 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>돌망돌망 주문관리센터 v2 (GitHub)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;background:#f5f5f5;color:#333}
+header{background:#ff6b35;color:white;padding:16px 24px;font-size:20px;font-weight:700;display:flex;align-items:center;gap:10px}
+header span{font-size:14px;opacity:.85;font-weight:400;margin-left:8px}
+header .gas-dot{width:9px;height:9px;border-radius:50%;background:#aaa;margin-left:auto;margin-right:4px;transition:background .3s}
+header .gas-dot.ok{background:#4caf50}
+header .gas-dot.err{background:#f44336}
+header .gas-lbl{font-size:12px;opacity:.8}
+.tab-bar{background:white;display:flex;border-bottom:2px solid #eee;padding:0 16px;overflow-x:auto}
+.tab-btn{padding:14px 22px;border:none;background:none;cursor:pointer;font-size:15px;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;font-weight:500;white-space:nowrap}
+.tab-btn.active{color:#ff6b35;border-bottom-color:#ff6b35}
+.tab-btn:hover{color:#ff6b35}
+.tab-content{display:none;padding:24px;max-width:1200px;margin:0 auto}
+.tab-content.active{display:block}
+.card{background:white;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.card h2{font-size:16px;font-weight:700;margin-bottom:16px;color:#222}
+.card h3{font-size:14px;font-weight:600;color:#555;margin-bottom:10px}
+.file-area{border:2px dashed #ddd;border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;background:#fafafa;position:relative;min-height:88px}
+.file-area:hover{border-color:#ff6b35;background:#fff5f0}
+.file-area.has-file{border-color:#4caf50;background:#f0fff0}
+.file-area input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2}
+.file-area .icon{font-size:22px;margin-bottom:3px}
+.file-area .label{font-size:12px;color:#666;line-height:1.5}
+.file-area .filename{font-size:12px;color:#4caf50;font-weight:600;margin-top:4px}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s}
+.btn-primary{background:#ff6b35;color:white}.btn-primary:hover{background:#e55a25}
+.btn-primary:disabled{background:#ccc;cursor:not-allowed}
+.btn-success{background:#4caf50;color:white}.btn-success:hover{background:#388e3c}
+.btn-success:disabled{background:#ccc;cursor:not-allowed}
+.btn-danger{background:#f44336;color:white}.btn-danger:hover{background:#c62828}
+.btn-outline{background:white;color:#ff6b35;border:2px solid #ff6b35}.btn-outline:hover{background:#fff5f0}
+.btn-cloud{background:#1976d2;color:white}.btn-cloud:hover{background:#1565c0}
+.btn-sm{padding:4px 9px;font-size:12px;border-radius:6px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:18px}
+.summary-box{background:#f8f8f8;border-radius:8px;padding:12px 14px;text-align:center}
+.summary-box .val{font-size:17px;font-weight:700;color:#ff6b35}
+.summary-box .lbl{font-size:11px;color:#888;margin-top:2px}
+.summary-box.blue .val{color:#1976d2}
+.summary-box.green .val{color:#2e7d32}
+.summary-box.red .val{color:#c62828}
+.summary-box.orange .val{color:#e67e00}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f5f5f5;padding:8px 9px;text-align:left;font-weight:600;border-bottom:2px solid #e0e0e0;white-space:nowrap}
+td{padding:7px 9px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafa}
+tr.editing td{background:#fffde7!important}
+.edit-input{border:1px solid #ffc107;border-radius:4px;padding:3px 6px;font-size:12px;width:100%;min-width:48px}
+.tbl-wrap{overflow-x:auto;margin-top:10px}
+.badge{display:inline-block;padding:2px 7px;border-radius:12px;font-size:11px;font-weight:600}
+.badge-cp{background:#fff0e0;color:#e67e00}
+.badge-ss{background:#e0f0ff;color:#0066cc}
+.badge-ok{background:#e0ffe0;color:#1a8a1a}
+.badge-miss{background:#ffe0e0;color:#cc0000}
+.badge-bj{background:#f0e8ff;color:#7b1fa2}
+.alert{padding:11px 15px;border-radius:8px;font-size:13px;margin-bottom:14px;line-height:1.6}
+.alert-info{background:#e8f4fd;color:#1a6fa8;border-left:4px solid #2196f3}
+.alert-warn{background:#fff8e1;color:#8a6000;border-left:4px solid #ffc107}
+.alert-success{background:#e8f5e9;color:#1b5e20;border-left:4px solid #4caf50}
+.profit-positive{color:#1a8a1a;font-weight:700}
+.profit-negative{color:#cc0000;font-weight:700}
+.hidden{display:none}
+.divider{border:none;border-top:1px solid #eee;margin:14px 0}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.two-col{grid-template-columns:1fr}}
+.step-num{display:inline-flex;align-items:center;justify-content:center;background:#ff6b35;color:white;border-radius:50%;width:20px;height:20px;font-size:11px;font-weight:700;margin-right:4px}
+.del-btn{background:none;border:none;cursor:pointer;color:#f44336;font-size:15px;padding:2px 5px;border-radius:4px}
+.del-btn:hover{background:#fff0f0}
+.filter-bar{background:#f9f9f9;border:1px solid #eee;border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.filter-bar label{font-size:12px;color:#666;font-weight:600;white-space:nowrap}
+.filter-input{border:1px solid #ddd;border-radius:6px;padding:5px 9px;font-size:13px;outline:none}
+.filter-input:focus{border-color:#ff6b35}
+.filter-select{border:1px solid #ddd;border-radius:6px;padding:5px 9px;font-size:13px;background:white;cursor:pointer;outline:none}
+.filter-tag{font-size:11px;background:#fff3e0;color:#e67e00;padding:2px 8px;border-radius:12px;font-weight:600}
+.sync-row{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:#888}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#aaa;display:inline-block}
+.sync-dot.ok{background:#4caf50}
+.sync-dot.err{background:#f44336}
+.sync-dot.spin{background:#ff6b35;animation:pulse .8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.toast{position:fixed;bottom:24px;right:24px;background:#333;color:white;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;max-width:320px}
+.toast.show{opacity:1}
+.hist-section{border:1px solid #e0e0e0;border-radius:8px;padding:16px;margin-top:14px;background:#fafafa}
+.hist-section h3{margin-bottom:10px}
+.view-toggle{display:flex;gap:6px;margin-bottom:14px}
+.view-toggle button{padding:6px 16px;border-radius:20px;border:1.5px solid #ddd;background:#fff;font-size:13px;cursor:pointer;color:#666;font-weight:500;transition:all .15s}
+.view-toggle button.active{background:#ff6b35;border-color:#ff6b35;color:#fff;font-weight:700}
+.monthly-tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.monthly-tbl th{background:#f5f5f5;padding:8px 10px;text-align:right;font-weight:600;color:#555;border-bottom:2px solid #e0e0e0;white-space:nowrap}
+.monthly-tbl th:first-child{text-align:center}
+.monthly-tbl td{padding:7px 10px;text-align:right;border-bottom:1px solid #f0f0f0;color:#333}
+.monthly-tbl td:first-child{text-align:center;font-weight:700;color:#ff6b35}
+.monthly-tbl tr:last-child td{background:#fff8f5;font-weight:700;border-top:2px solid #ffccaa;color:#c0440a}
+.monthly-tbl tr:last-child td:first-child{color:#c0440a}
+.monthly-tbl .pos{color:#2e7d32;font-weight:700}
+.monthly-tbl .neg{color:#c62828;font-weight:700}
+</style>
+</head>
+<body>
+<header>
+  🥕 돌망돌망 주문관리센터
+  <span>소낭친환경 유기농 당근</span>
+  <span class="gas-dot" id="gasDot"></span>
+  <span class="gas-lbl" id="gasLbl"></span>
+</header>
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab(0)">📦 발주서 생성</button>
+  <button class="tab-btn" onclick="switchTab(1)">🚚 송장 처리</button>
+  <button class="tab-btn" onclick="switchTab(2)">💰 정산 현황</button>
+</div>
+
+<!-- TAB 0: 발주서 생성 -->
+<div id="tab0" class="tab-content active">
+  <div class="card">
+    <h2>📦 소낭 발주서 생성</h2>
+    <div class="alert alert-info">쿠팡 DeliveryList · 스마트스토어 주문확인서 · 당근마켓 주문내역을 업로드하면 소낭친환경 발주 양식으로 자동 변환합니다. 미리보기에서 ✕로 제외할 주문을 삭제한 후 발주서를 생성하세요.</div>
+    <div class="file-area" id="drop0">
+      <input type="file" id="file0" accept=".xlsx,.xls" onchange="onFile0(this)">
+      <div class="icon">📂</div>
+      <div class="label">쿠팡 DeliveryList / 스마트스토어 / 당근마켓 주문파일 업로드<br><small>클릭 또는 드래그 — 플랫폼 자동 감지</small></div>
+      <div class="filename" id="fname0"></div>
+    </div>
+    <div style="margin-top:12px">
+      <button class="btn btn-cloud" onclick="loadOrdersForTab0()" id="btnGasLoad0">☁️ 구글시트에서 미처리 발주 불러오기</button>
+      <span id="t0GasStatus" style="margin-left:10px;font-size:13px;color:#666"></span>
+    </div>
+  </div>
+
+  <div class="card" id="manualCard">
+    <h2>📞 발주방 주문 직접 입력 <span style="color:#888;font-size:13px;font-weight:400">— 전화·카톡 주문을 발주서에 추가</span></h2>
+    <div class="alert alert-warn" style="margin-bottom:14px">발주방 주문은 쿠팡 업로드 파일에 포함되지 않습니다. 정산 수수료 0% 적용.</div>
+    <div class="two-col">
+      <div>
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">받는사람 *</label>
+        <input class="filter-input" id="mName" placeholder="홍길동" style="width:100%;margin-bottom:10px">
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">전화번호 *</label>
+        <input class="filter-input" id="mPhone" placeholder="010-0000-0000" style="width:100%;margin-bottom:10px">
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">우편번호</label>
+        <input class="filter-input" id="mZip" placeholder="12345" style="width:100%;margin-bottom:10px">
+      </div>
+      <div>
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">주소 *</label>
+        <input class="filter-input" id="mAddr" placeholder="제주시 어딘가로 123" style="width:100%;margin-bottom:10px">
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">배송메시지</label>
+        <input class="filter-input" id="mMsg" placeholder="문앞에 놔주세요" style="width:100%;margin-bottom:10px">
+        <div style="display:flex;gap:8px">
+          <div style="flex:1">
+            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">옵션 *</label>
+            <select class="filter-select" id="mOption" style="width:100%">
+              <option value="2kg">2kg</option>
+              <option value="3kg">3kg</option>
+              <option value="5kg">5kg</option>
+            </select>
+          </div>
+          <div style="width:70px">
+            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">수량</label>
+            <input class="filter-input" id="mQty" type="number" value="1" min="1" style="width:100%">
+          </div>
+          <div style="width:100px">
+            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">판매금액</label>
+            <input class="filter-input" id="mPrice" type="number" placeholder="자동" style="width:100%">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn btn-primary" onclick="addManualOrder()">➕ 발주서에 추가</button>
+    </div>
+  </div>
+
+  <div id="preview0" class="hidden">
+    <div class="card">
+      <h2>📋 발주서 미리보기 <span style="color:#888;font-size:13px;font-weight:400">— ✕ 클릭으로 제외 후 발주서 생성</span></h2>
+      <div class="summary-grid">
+        <div class="summary-box"><div class="val" id="b0total">0</div><div class="lbl">총 주문</div></div>
+        <div class="summary-box"><div class="val" id="b02kg">0</div><div class="lbl">2kg 합</div></div>
+        <div class="summary-box"><div class="val" id="b03kg">0</div><div class="lbl">3kg 합</div></div>
+        <div class="summary-box"><div class="val" id="b05kg">0</div><div class="lbl">5kg 합</div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="downloadBaljoo()">📋 발주서 생성 (.xlsx)</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>제외</th><th>#</th><th>채널</th><th>받는사람</th><th>전화번호</th><th>옵션</th><th>수량</th><th>주소</th><th>배송메시지</th><th>주문번호</th></tr></thead>
+          <tbody id="tbody0"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 1: 송장 처리 -->
+<div id="tab1" class="tab-content">
+  <div class="card">
+    <h2>🚚 송장 처리 / 업로드 파일 생성</h2>
+    <div class="alert alert-info">
+      소낭에서 받은 송장번호 입력된 발주서를 업로드하면 플랫폼별 업로드 파일이 생성됩니다.<br>
+      ▸ <b>쿠팡</b>: 쿠팡 대량업로드 파일 (.xlsx) 다운로드<br>
+      ▸ <b>당근마켓</b>: 당근마켓 운송장 등록용 파일 (.xlsx) 다운로드 — 당근 앱 &gt; 판매관리 &gt; 운송장 일괄등록에서 업로드<br>
+      <small>💡 발주서탭에서 파일을 이미 로드한 경우 원본 주문파일 재업로드 불필요. 이름+전화번호로 자동 매칭합니다.</small>
+    </div>
+    <div id="t1OrdOk" class="alert alert-success hidden">✅ 발주서탭 주문파일 로드됨 — 송장파일만 업로드하면 됩니다.</div>
+    <div id="t1GasOk" class="alert alert-success hidden" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      ☁️ 구글시트 발주 불러옴: <b id="t1GasCount">0</b>건 — 송장파일만 업로드하면 됩니다.
+      <button class="btn btn-sm btn-outline" onclick="clearGasOrders()" style="margin-left:4px">✕ 초기화</button>
+    </div>
+    <div id="t1GasBtnArea" class="hidden" style="margin-bottom:14px">
+      <div class="alert alert-warn" style="margin-bottom:10px">💡 발주서탭을 <b>다른 PC</b>에서 작업한 경우 — 구글시트 발주 불러오기로 DeliveryList 재업로드 없이 진행 가능합니다.</div>
+      <button class="btn btn-cloud" onclick="loadOrdersFromGitHub()" id="btnGasLoad">☁️ 깃허브에서 발주 불러오기</button>
+    </div>
+    <div id="t1OrdUpload">
+      <h3><span class="step-num">1</span> 원본 주문파일 (쿠팡 DeliveryList / 스마트스토어 / 당근마켓)</h3>
+      <div class="file-area" id="drop1a">
+        <input type="file" id="file1a" accept=".xlsx,.xls" onchange="onFile1a(this)">
+        <div class="icon">📂</div>
+        <div class="label">쿠팡 DeliveryList / 스마트스토어 / 당근마켓 주문파일</div>
+        <div class="filename" id="fname1a"></div>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <h3><span class="step-num" id="t1step">2</span> 소낭 발주서 (송장번호 포함)</h3>
+      <div class="file-area" id="drop1b">
+        <input type="file" id="file1b" accept=".xlsx,.xls" onchange="onFile1b(this)">
+        <div class="icon">📬</div>
+        <div class="label">소낭친환경에서 받은 송장번호 입력된 발주서</div>
+        <div class="filename" id="fname1b"></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="runTracking()" id="btnTracking" disabled>🚚 처리 시작</button>
+    </div>
+  </div>
+  <div id="result1" class="hidden">
+    <div class="card">
+      <h2>✅ 처리 결과</h2>
+      <div class="summary-grid">
+        <div class="summary-box"><div class="val" id="t1total">0</div><div class="lbl">전체 주문</div></div>
+        <div class="summary-box green"><div class="val" id="t1matched">0</div><div class="lbl">매칭 성공</div></div>
+        <div class="summary-box red"><div class="val" id="t1miss">0</div><div class="lbl">미매칭</div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-success" onclick="downloadCoupangUpload()">⬇️ 쿠팡 대량업로드 파일</button>
+        <button class="btn btn-success" onclick="downloadSSUpload()" style="background:#03c75a">🟢 스마트스토어 일괄발송 파일</button>
+        <button class="btn btn-success" onclick="downloadDaangnUpload()" style="background:#FF6F00">🥕 당근마켓 운송장 등록 파일</button>
+        <button class="btn btn-outline" onclick="addToSettlement()">💰 정산에 추가</button>
+      </div>
+      <div id="missAlert1" class="hidden alert alert-warn" style="margin-top:10px"></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>받는사람</th><th>옵션</th><th>수량</th><th>매칭</th><th>택배사</th><th>운송장번호</th></tr></thead>
+          <tbody id="tbody1"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 2: 정산 현황 -->
+<div id="tab2" class="tab-content">
+  <div class="card">
+    <h2>📊 정산 요약</h2>
+    <div class="view-toggle">
+      <button id="btnViewTotal" class="active" onclick="switchSummaryView('total')">📊 전체 합계</button>
+      <button id="btnViewMonth" onclick="switchSummaryView('month')">📅 월별 요약</button>
+    </div>
+    <div id="viewTotal">
+      <div class="summary-grid" id="summaryGrid">
+        <div class="summary-box"><div class="val" id="s2count">0</div><div class="lbl">정산 건수</div></div>
+        <div class="summary-box blue"><div class="val" id="s2sales">0</div><div class="lbl">총 매출</div></div>
+        <div class="summary-box red"><div class="val" id="s2sonang">0</div><div class="lbl">소낭 정산금액</div></div>
+        <div class="summary-box red"><div class="val" id="s2fee">0</div><div class="lbl">총 수수료</div></div>
+        <div class="summary-box green"><div class="val" id="s2profit">0</div><div class="lbl">총 순이익</div></div>
+        <div class="summary-box green"><div class="val" id="s2margin">0%</div><div class="lbl">마진율</div></div>
+        <div class="summary-box orange"><div class="val" id="s2_2kg">0개</div><div class="lbl">2kg</div></div>
+        <div class="summary-box orange"><div class="val" id="s2_3kg">0개</div><div class="lbl">3kg</div></div>
+        <div class="summary-box orange"><div class="val" id="s2_5kg">0개</div><div class="lbl">5kg</div></div>
+      </div>
+    </div>
+    <div id="viewMonth" style="display:none">
+      <div class="tbl-wrap"><table class="monthly-tbl">
+        <thead><tr>
+          <th>월</th><th>건수</th><th>매출</th><th>소낭원가</th><th>수수료</th><th>순이익</th><th>마진율</th><th>2kg</th><th>3kg</th><th>5kg</th>
+        </tr></thead>
+        <tbody id="tbodyMonth"></tbody>
+      </table></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="downloadSettlement()">⬇️ 엑셀 다운로드</button>
+      <button class="btn btn-cloud" onclick="loadFromGitHub()">☁️ 깃허브 불러오기</button>
+      <button class="btn btn-cloud" onclick="saveToGitHubManual()">☁️ 깃허브 저장</button>
+      <button class="btn btn-outline" onclick="toggleHistSection()">📂 이전 주문 추가</button>
+      <button class="btn btn-outline" onclick="deduplicateSettlement()" style="color:#e67e00;border-color:#e67e00">🔧 중복 제거</button>
+      <button class="btn btn-danger" style="margin-left:auto" onclick="clearSettlement()">🗑️ 초기화</button>
+    </div>
+    <div class="sync-row">
+      <span class="sync-dot" id="syncDot"></span>
+      <span id="syncLbl" style="font-size:12px;color:#888">-</span>
+    </div>
+    <div class="hist-section hidden" id="histSection">
+      <h3>📂 소낭친환경 송장파일로 정산 추가 <span style="font-weight:400;color:#888;font-size:12px">— 소낭에서 받은 발주_송장번호.xlsx 파일 업로드</span></h3>
+      <div class="file-area" id="dropHist" style="min-height:70px">
+        <input type="file" id="fileHist" accept=".xlsx,.xls" multiple onchange="onFileHist(this)">
+        <div class="icon">📦</div>
+        <div class="label">소낭친환경 발주_송장번호.xlsx 업로드 → 정산 자동 추가<br><span style="font-size:11px;color:#aaa">중복 송장번호는 자동 스킵됩니다</span></div>
+        <div class="filename" id="fnameHist"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>📦 공급가 관리 <span style="font-size:13px;font-weight:400;color:#888">— 날짜별 단가 이력</span>
+      <button class="btn btn-sm btn-outline" style="float:right;font-size:12px" onclick="toggleSupplyMgr()">⚙️ 관리</button>
+    </h2>
+    <div id="supplyMgrBody">
+      <div id="supplyTierList" style="margin-bottom:10px"></div>
+    </div>
+    <div id="supplyMgrEdit" style="display:none;border-top:1px solid #eee;padding-top:12px;margin-top:8px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:#555">새 공급가 구간 추가</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <div><label style="font-size:11px;color:#888;display:block">적용시작일</label>
+          <input class="filter-input" type="date" id="supplyFromDate" style="width:130px"></div>
+        <div><label style="font-size:11px;color:#888;display:block">2kg 공급가</label>
+          <input class="filter-input" type="number" id="supplyP2" placeholder="12000" style="width:90px"></div>
+        <div><label style="font-size:11px;color:#888;display:block">3kg 공급가</label>
+          <input class="filter-input" type="number" id="supplyP3" placeholder="15000" style="width:90px"></div>
+        <div><label style="font-size:11px;color:#888;display:block">5kg 공급가</label>
+          <input class="filter-input" type="number" id="supplyP5" placeholder="21000" style="width:90px"></div>
+        <div style="align-self:flex-end">
+          <button class="btn btn-success btn-sm" onclick="addSupplyTier()">✅ 추가</button>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <button class="btn btn-sm" style="background:#1976d2;color:white" onclick="recalcAllCosts()">🔄 전체 내역 원가 재계산</button>
+        <span style="font-size:11px;color:#aaa;margin-left:8px">날짜에 맞는 공급가로 모든 정산 내역의 원가·순이익·마진율을 다시 계산합니다</span>
+      </div>
+    </div>
+  </div>
+  <div class="card" id="supplierSettleCard">
+    <h2>🏦 공급처 정산 현황 <span style="font-size:13px;font-weight:400;color:#888">— 소낭친환경</span></h2>
+    <div id="supplierSettleBody" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px"></div>
+    <div style="font-size:12px;color:#aaa;margin-top:4px">* <b>지급완료</b>: 실제 송금 기준 | <b>미지급</b>: 누적 원가 합계</div>
+  </div>
+  <div id="settleTableCard" class="card">
+    <h2>📋 정산 내역 <span style="color:#888;font-size:13px;font-weight:400">— ✏️ 수정 가능 | <span id="filterTag" class="filter-tag hidden">필터 적용 중</span></span></h2>
+    <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+      <button id="fpBtn0" class="btn btn-sm" style="background:#ff6b35;color:white;border-radius:20px" onclick="setPeriod('thisMonth')">이번달</button>
+      <button id="fpBtn1" class="btn btn-sm btn-outline" style="border-radius:20px" onclick="setPeriod('lastMonth')">지난달</button>
+      <button id="fpBtn2" class="btn btn-sm btn-outline" style="border-radius:20px" onclick="setPeriod('all')">전체</button>
+      <select id="fpMonthSel" class="filter-select" style="display:none;border-radius:20px" onchange="setPeriod('pick')">
+      </select>
+    </div>
+    <div class="filter-bar">
+      <label>🔍 구매자</label>
+      <input class="filter-input" id="fName" placeholder="이름 검색..." style="width:110px" oninput="applyFilter()">
+      <label>채널</label>
+      <select class="filter-select" id="fChannel" onchange="applyFilter()">
+        <option value="">전체</option>
+        <option value="쿠팡">쿠팡</option>
+        <option value="스마트스토어">스마트스토어</option>
+        <option value="발주방">발주방</option>
+        <option value="당근마켓">🥕 당근마켓</option>
+      </select>
+      <label>옵션</label>
+      <select class="filter-select" id="fOption" onchange="applyFilter()">
+        <option value="">전체</option>
+        <option value="2kg">2kg</option>
+        <option value="3kg">3kg</option>
+        <option value="5kg">5kg</option>
+      </select>
+      <label>날짜</label>
+      <input class="filter-input" type="date" id="fFrom" onchange="applyFilter()" style="width:130px">
+      <span>~</span>
+      <input class="filter-input" type="date" id="fTo" onchange="applyFilter()" style="width:130px">
+      <button class="btn btn-sm btn-outline" onclick="clearFilter()">초기화</button>
+      <span id="filterCount" style="font-size:12px;color:#888;margin-left:4px"></span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th style="cursor:pointer;user-select:none" onclick="toggleDateSort()">날짜 <span id="dateSortArrow">▼</span></th><th>구매자</th><th>채널</th>
+            <th>옵션</th><th>수량</th><th>판매가</th><th>매입가</th>
+            <th>수수료</th><th>순이익</th><th>마진율</th><th>송장번호</th><th>수정/삭제</th>
+          </tr>
+        </thead>
+        <tbody id="tbodySettle"></tbody>
+      </table>
+    </div>
+    <div id="emptyMsg" class="hidden" style="text-align:center;padding:32px;color:#aaa;font-size:14px">
+      정산 데이터가 없습니다.<br><small>송장처리탭에서 <b>정산에 추가</b>를 클릭하거나 이전 주문 추가를 이용하세요.</small>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ======================================================
+   CONSTANTS & CONFIG
+====================================================== */
+const SUPPLY={'2kg':12000,'3kg':15000,'5kg':21000}; // 기본값 (공급가 이력 없을 때 fallback)
+const SUPPLY_TIERS_SK='dolmang_supply_tiers_v1';
+
+function loadSupplyTiers(){
+  try{
+    const d=JSON.parse(localStorage.getItem(SUPPLY_TIERS_SK)||'null');
+    if(d&&d.length)return d;
+  }catch(e){}
+  // 초기값: 기존 하드코딩 이력
+  return[
+    {from:'2026-01-01',p2:12000,p3:15000,p5:21000},
+    {from:'2026-04-17',p2:11500,p3:14500,p5:20500}
+  ];
+}
+function saveSupplyTiers(tiers){localStorage.setItem(SUPPLY_TIERS_SK,JSON.stringify(tiers));}
+
+// 특정 날짜에 적용되는 공급가 반환
+function getSupplyForDate(dateStr){
+  const tiers=loadSupplyTiers().sort((a,b)=>a.from<b.from?-1:1);
+  let supply={p2:12000,p3:15000,p5:21000};
+  for(const t of tiers){if(dateStr>=t.from)supply=t;}
+  return{'2kg':supply.p2,'3kg':supply.p3,'5kg':supply.p5};
+}
+
+function renderSupplyTiers(){
+  const tiers=loadSupplyTiers().sort((a,b)=>a.from<b.from?-1:1);
+  const today=todayYMD();
+  const el=document.getElementById('supplyTierList');if(!el)return;
+  el.innerHTML=tiers.map((t,i)=>{
+    const isActive=tiers.slice(i+1).every(n=>today<n.from);
+    const badge=isActive?'<span style="background:#4caf50;color:white;padding:1px 7px;border-radius:10px;font-size:11px;margin-left:6px">현재적용</span>':'';
+    return`<div style="display:flex;align-items:center;gap:14px;padding:7px 10px;border-radius:6px;background:${isActive?'#f0fff4':'#fafafa'};margin-bottom:5px;font-size:13px">
+      <span style="font-weight:700;color:#ff6b35;min-width:90px">${t.from} ~${badge}</span>
+      <span>2kg <b>${comma(t.p2)}원</b></span>
+      <span>3kg <b>${comma(t.p3)}원</b></span>
+      <span>5kg <b>${comma(t.p5)}원</b></span>
+      ${i>0?`<button class="btn btn-danger btn-sm" style="margin-left:auto;font-size:11px" onclick="delSupplyTier(${i})">삭제</button>`:''}
+    </div>`;
+  }).join('');
+}
+
+function toggleSupplyMgr(){
+  const el=document.getElementById('supplyMgrEdit');
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+
+function addSupplyTier(){
+  const from=document.getElementById('supplyFromDate').value;
+  const p2=parseInt(document.getElementById('supplyP2').value)||0;
+  const p3=parseInt(document.getElementById('supplyP3').value)||0;
+  const p5=parseInt(document.getElementById('supplyP5').value)||0;
+  if(!from||!p2||!p3||!p5){alert('날짜와 2kg·3kg·5kg 공급가를 모두 입력하세요.');return;}
+  const tiers=loadSupplyTiers();
+  const idx=tiers.findIndex(t=>t.from===from);
+  if(idx>=0)tiers[idx]={from,p2,p3,p5};
+  else tiers.push({from,p2,p3,p5});
+  saveSupplyTiers(tiers);
+  renderSupplyTiers();
+  ['supplyFromDate','supplyP2','supplyP3','supplyP5'].forEach(id=>document.getElementById(id).value='');
+  toast('✅ 공급가 구간 추가됨 ('+from+' ~)');
+}
+
+function delSupplyTier(i){
+  if(!confirm('이 구간을 삭제하시겠습니까?'))return;
+  const tiers=loadSupplyTiers();tiers.splice(i,1);saveSupplyTiers(tiers);renderSupplyTiers();
+}
+
+function recalcAllCosts(){
+  if(!confirm('모든 정산 내역의 원가·순이익·마진율을 날짜별 공급가로 재계산합니다.\n계속하시겠습니까?'))return;
+  const data=loadS();
+  let changed=0;
+  data.forEach(r=>{
+    const supply=getSupplyForDate(normDate(r.date));
+    const sz=extractSize(r.option);
+    const newCost=(supply[sz]||0)*r.qty;
+    if(newCost!==r.costPrice){
+      r.costPrice=newCost;
+      r.profit=r.salePrice-newCost-r.commission;
+      r.margin=r.salePrice>0?parseFloat((r.profit/r.salePrice*100).toFixed(1)):0;
+      changed++;
+    }
+  });
+  saveS(data);renderSettle();
+  toast(`✅ 재계산 완료 — ${changed}건 변경됨`);
+}
+const FEE_RT={'쿠팡':0.108,'스마트스토어':0.055,'발주방':0,'당근마켓':0};
+const SENDER={name:'돌망돌망',zip:'',addr:'제주특별자치도 서귀포시 표선면 서성일로 89',phone:'010-2272-3645'};
+const SK='dolmang_settle_v4'; // 2026-05-04 supplierPaid 추가 (4월 정산완료 반영) // 2026-04-29 발주서 기준 정산 재구성 (130건)
+// ── GitHub Storage ──
+const GH_TOKEN='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';
+const GH_USER='nambong2-prog';const GH_REPO='dolmang-order';
+const GH_API='https://api.github.com/repos/'+GH_USER+'/'+GH_REPO+'/contents/';
+const GH_SETTLE='settlement.json';const GH_ORDERS='orders.json';
+let _settleSHA=null;let _ordersSHA=null;
+// GitHub 파일 읽기
+async function ghRead(path){
+  const res=await fetch(GH_API+path,{headers:{'Authorization':'token '+GH_TOKEN,'Accept':'application/vnd.github.v3+json'}});
+  if(res.status===404)return{content:null,sha:null};
+  if(!res.ok)throw new Error('GitHub 읽기 실패: '+res.status);
+  const d=await res.json();
+  const content=JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/\n/g,'')))));
+  return{content,sha:d.sha};
+}
+// GitHub 파일 쓰기
+async function ghWrite(path,data,sha,msg){
+  const json=JSON.stringify(data);
+  const content=btoa(unescape(encodeURIComponent(json)));
+  const body={message:msg||'update '+path,content};
+  if(sha)body.sha=sha;
+  const res=await fetch(GH_API+path,{method:'PUT',
+    headers:{'Authorization':'token '+GH_TOKEN,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
+    body:JSON.stringify(body)});
+  if(!res.ok){const t=await res.text();throw new Error('GitHub 저장 실패: '+res.status);}
+  const d=await res.json();return d.content.sha;
+}
+
+/* 4/13~5/01 발주서_송장번호 기준 정산 데이터 (162건) */
+const SEED=[];
+
+/* ======================================================
+   STATE
+====================================================== */
+let orders0=[], rawWb0s={};  // rawWb0s: {platform: wb} — 플랫폼별 원본 wb
+let orders1=[], rawWb1=null;
+let gasLoadedOrders=[];
+let gasTimer=null;
+let gasOrderTimer=null;
+
+/* ======================================================
+   UTILS
+====================================================== */
+const normPhone=p=>{
+  const s=String(p||'').replace(/[^0-9]/g,'');
+  // 한국 휴대폰번호는 11자리. 10자리이고 1로 시작하면 앞에 0 복원 (숫자셀로 저장된 경우)
+  if(s.length===10&&s.startsWith('1'))return '0'+s;
+  return s;
+};
+const extractSize=opt=>{const m=String(opt||'').match(/(\d+)\s*kg/i);return m?m[1]+'kg':null;};
+const todayYMD=()=>new Date(Date.now()+9*3600000).toISOString().slice(0,10);
+const todayMMDD=()=>todayYMD().replace(/-/g,'').slice(4);
+const comma=n=>Math.round(n).toLocaleString('ko-KR');
+const safeMargin=v=>{const n=Number(v);return(isFinite(n)?n:0).toFixed(1)+'%';};
+// orderId 기준 중복 제거 — 뒤에 것 우선(최신 편집 반영)
+const dedupByOrderId=arr=>{const m=new Map();arr.forEach(r=>m.set(String(r.orderId),r));return[...m.values()];};
+
+const fmtPhone=p=>{const d=String(p||'');if(d.length===11)return d.slice(0,3)+'-'+d.slice(3,7)+'-'+d.slice(7);if(d.length===10)return d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6);return d;};
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const normDate=d=>{if(!d)return'';const s=String(d);if(s.includes('T')){const kst=new Date(new Date(s).getTime()+9*3600000);return kst.toISOString().slice(0,10);}return s.slice(0,10);};
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);}
+const show=id=>document.getElementById(id)?.classList.remove('hidden');
+const hide=id=>document.getElementById(id)?.classList.add('hidden');
+
+/* ======================================================
+   GAS SYNC — 정산 데이터
+====================================================== */
+function setSyncStatus(state,msg){
+  const dot=document.getElementById('syncDot');
+  const lbl=document.getElementById('syncLbl');
+  if(!dot)return;
+  dot.className='sync-dot'+(state==='ok'?' ok':state==='err'?' err':state==='spin'?' spin':'');
+  lbl.textContent=msg||'';
+}
+async function loadFromGitHub(){
+  setSyncStatus('spin','깃허브에서 불러오는 중...');
+  try{
+    // 주문 불러오기
+    const {content:ordersData}=await ghRead(GH_ORDERS);
+    if(ordersData&&ordersData.length>0){
+      const existIds=new Set(orders0.map(o=>o.orderId));
+      const newOrders=ordersData.filter(o=>o.orderId&&!existIds.has(o.orderId));
+      orders0=[...orders0,...newOrders];
+      if(orders0.length>0){renderPreview0();show('preview0');}
+    }
+    // 정산 불러오기
+    const {content:settleData,sha}=await ghRead(GH_SETTLE);
+    _settleSHA=sha;
+    if(settleData&&settleData.length>0){
+      const ghData=settleData.map(r=>({...r,date:normDate(r.date)}));
+      const local=loadS();
+      const ghIds=new Set(ghData.map(r=>String(r.orderId)));
+      const localOnly=local.filter(r=>!ghIds.has(String(r.orderId)));
+      const merged=dedupByOrderId([...ghData,...localOnly]);
+      localStorage.setItem(SK,JSON.stringify(merged));
+      if(localOnly.length>0){
+        _settleSHA=await ghWrite(GH_SETTLE,merged,_settleSHA,'병합 저장 ('+merged.length+'건)');
+        setSyncStatus('ok','병합 저장 완료 (깃허브 '+ghData.length+'건 + 로컬 '+localOnly.length+'건)');
+        toast('✅ 병합 완료 — 총 '+merged.length+'건');
+      }else{
+        setSyncStatus('ok','깃허브 불러오기 완료 ('+merged.length+'건)');
+        toast('✅ 깃허브 불러오기 완료 — '+merged.length+'건');
+      }
+      renderSettle();
+    }else{
+      setSyncStatus('ok','깃허브 정산 데이터 없음');
+      toast('깃허브에 저장된 정산 데이터가 없습니다.');
+    }
+  }catch(e){
+    setSyncStatus('err','깃허브 연결 실패');
+    toast('❌ 깃허브 연결 실패: '+e.message);
+    console.error(e);
+  }
+}
+async function saveToGitHub(data){
+  if(!data||!data.length)return;
+  try{
+    _settleSHA=await ghWrite(GH_SETTLE,data,_settleSHA,'정산 저장 ('+data.length+'건)');
+    setSyncStatus('ok','깃허브 저장 완료 ('+data.length+'건)');
+  }catch(e){setSyncStatus('err','깃허브 저장 실패');console.error(e);}
+}
+async function saveToGitHubManual(){
+  const data=loadS();
+  if(!data.length){toast('정산 데이터가 없습니다.');return;}
+  setSyncStatus('spin','저장 중...');
+  try{
+    _settleSHA=await ghWrite(GH_SETTLE,data,_settleSHA,'수동 저장 ('+data.length+'건)');
+    setSyncStatus('ok','깃허브 저장 완료 ('+data.length+'건)');
+    toast('✅ 깃허브에 저장 완료!');
+  }catch(e){setSyncStatus('err','저장 실패');toast('❌ 저장 실패: '+e.message);}
+}
+function scheduleAutoSave(data){
+  clearTimeout(gasTimer);
+  setSyncStatus('spin','저장 예정...');
+  gasTimer=setTimeout(async()=>{
+    try{
+      // 저장 전 깃허브 최신 데이터 가져와서 병합 — 다른 PC 데이터 손실 방지
+      const {content:ghData,sha}=await ghRead(GH_SETTLE);
+      _settleSHA=sha;
+      if(ghData&&ghData.length>0){
+        const ghIds=new Set(ghData.map(r=>String(r.orderId)));
+        const localOnly=data.filter(r=>!ghIds.has(String(r.orderId)));
+        if(localOnly.length===0){
+          setSyncStatus('ok','깃허브 동기화 완료 (변경 없음)');return;
+        }
+        const merged=dedupByOrderId([...ghData,...localOnly]);
+        localStorage.setItem(SK,JSON.stringify(merged));
+        _settleSHA=await ghWrite(GH_SETTLE,merged,_settleSHA,'병합 저장 ('+merged.length+'건)');
+        setSyncStatus('ok','깃허브 저장 완료 ('+merged.length+'건)');
+      }else{
+        _settleSHA=await ghWrite(GH_SETTLE,data,null,'정산 저장 ('+data.length+'건)');
+        setSyncStatus('ok','깃허브 저장 완료 ('+data.length+'건)');
+      }
+    }catch(e){
+      // 연결 실패 시 SHA 없이 강제 저장
+      try{_settleSHA=await ghWrite(GH_SETTLE,data,_settleSHA,'정산 저장');}
+      catch(e2){setSyncStatus('err','깃허브 저장 실패');console.error(e2);}
+    }
+  },3000);
+}
+// 주문(orders0) 구글시트 저장 — rawRow 등 대용량 필드 제외
+// orders0가 비어있어도 저장해야 GAS 데이터가 지워짐
+async function saveOrdersToGitHub(){
+  const skip=new Set(['rawRow','rawHeaders','rawCol']);
+  const clean=orders0.map(o=>{
+    const r={};Object.keys(o).forEach(k=>{if(!skip.has(k))r[k]=o[k];});
+    if(o.rawRow&&o.rawRow.length>0)r.rawRowJson=JSON.stringify(o.rawRow);
+    return r;
+  });
+  setSyncStatus('spin','주문 저장 중...');
+  try{
+    _ordersSHA=await ghWrite(GH_ORDERS,clean,_ordersSHA,'주문 저장 ('+clean.length+'건)');
+    setSyncStatus('ok','주문 저장 완료 ('+clean.length+'건)');
+  }catch(e){setSyncStatus('err','주문 저장 실패');console.error(e);}
+}
+function scheduleOrdersSave(){
+  clearTimeout(gasOrderTimer);
+  gasOrderTimer=setTimeout(saveOrdersToGAS,3000);
+}
+
+
+async async function loadOrdersFromGitHub(){
+  const btn=document.getElementById('btnGasLoad');
+  if(btn){btn.disabled=true;btn.textContent='불러오는 중...';}
+  try{
+    const {content:data,sha}=await ghRead(GH_ORDERS);
+    _ordersSHA=sha;
+    if(data&&data.length>0){
+      gasLoadedOrders=data.map(o=>{
+        if(o.rawRowJson){try{return{...o,rawRow:JSON.parse(o.rawRowJson)};}catch(e){}}
+        return o;
+      });
+      document.getElementById('t1GasCount').textContent=data.length;
+      show('t1GasOk');hide('t1GasBtnArea');
+      refreshTab1UI();
+      toast('✅ 깃허브에서 '+data.length+'건 발주 불러옴');
+    }else{
+      toast('깃허브에 저장된 발주가 없습니다. DeliveryList를 직접 업로드하세요.');
+    }
+  }catch(e){
+    toast('❌ 깃허브 연결 실패: '+e.message);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='☁️ 깃허브에서 발주 불러오기';}
+  }
+}
+
+function clearGasOrders(){
+  gasLoadedOrders=[];
+  hide('t1GasOk');
+  if(orders0.length===0){show('t1GasBtnArea');show('t1OrdUpload');}
+  refreshTab1UI();
+  toast('발주 초기화됨');
+}
+
+/* ======================================================
+   LOCAL STORAGE
+====================================================== */
+function loadS(){
+  try{
+    const data=JSON.parse(localStorage.getItem(SK)||'[]');
+    const deduped=dedupByOrderId(data);
+    return deduped.map(r=>{
+      const margin=Number(r.margin);
+      if(!isFinite(margin)){
+        const s=Number(r.salePrice)||0,p=Number(r.profit)||0;
+        return{...r,margin:s>0?parseFloat((p/s*100).toFixed(1)):0};
+      }
+      return r;
+    });
+  }catch(e){return[];}
+}
+function saveS(d){localStorage.setItem(SK,JSON.stringify(d));scheduleAutoSave(d);}
+
+/* ======================================================
+   TABS
+====================================================== */
+function switchTab(n){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===n));
+  document.querySelectorAll('.tab-content').forEach((c,i)=>c.classList.toggle('active',i===n));
+  if(n===1){
+    refreshTab1UI();
+    if(orders0.length===0&&gasLoadedOrders.length===0)show('t1GasBtnArea');
+  }
+  if(n===2)renderSettle();
+}
+
+/* ======================================================
+   FILE READING
+====================================================== */
+function readXlsx(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=e=>{try{res(XLSX.read(new Uint8Array(e.target.result),{type:'array'}));}catch(err){rej(err);}};
+    r.onerror=rej;
+    r.readAsArrayBuffer(file);
+  });
+}
+function setLabel(aId,fId,name){
+  document.getElementById(fId).textContent='✅ '+name;
+  document.getElementById(aId).classList.add('has-file');
+}
+
+/* ======================================================
+   PARSING
+====================================================== */
+function detectPlatform(headers,filename){
+  if(String(filename||'').toLowerCase().includes('deliverylist'))return '쿠팡';
+  if(headers.some(h=>String(h).includes('상품주문번호')))return '스마트스토어';
+  if(headers.some(h=>String(h).includes('당근 닉네임'))||headers.some(h=>String(h).includes('당근닉네임')))return '당근마켓';
+  if(String(filename||'').includes('당근')&&headers.some(h=>String(h).includes('수령방식')))return '당근마켓';
+  return '쿠팡';
+}
+
+/* 당근마켓 상품명에서 옵션/수량 파싱
+   예: "제주 유기농 흙당근 2kg 산지직송/3kg 혼합 1개" → {option:'3kg', qty:1} */
+function parseDaangnProduct(productName){
+  const parts=String(productName||'').split('/');
+  const optPart=parts.length>1?parts[parts.length-1]:productName;
+  const kgM=optPart.match(/(\d+)\s*kg/i);
+  const qtyM=optPart.match(/(\d+)\s*개/);
+  const option=kgM?kgM[1]+'kg':'3kg';
+  const qty=qtyM?parseInt(qtyM[1]):1;
+  return{option,qty};
+}
+function parseDelivery(wb,filename){
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  if(rows.length<2)throw new Error('데이터가 없습니다.');
+  const headers=rows[0].map(h=>String(h||''));
+  const platform=detectPlatform(headers,filename);
+  const orders=[];
+  if(platform==='쿠팡'){
+    for(let i=1;i<rows.length;i++){
+      const r=rows[i];
+      const orderId=String(r[2]||'').trim();
+      if(!orderId)continue;
+      orders.push({rowIdx:i,rawRow:r.slice(),platform:'쿠팡',orderId,
+        bundleId:String(r[1]||'').trim(),  // 묶음배송번호 (buildDLRow 재구성용)
+        optionId:String(r[14]||'').trim(), // 옵션ID (buildDLRow 재구성용 — 빨간색 필수항목)
+        orderDate:String(r[9]||'').slice(0,10),option:String(r[11]||'').trim(),prodName:String(r[10]||'').trim(),
+        payment:Number(r[18])||0,qty:Number(r[22])||1,
+        name:String(r[26]||'').trim(),phone:normPhone(r[27]),
+        zip:String(r[28]||'').trim(),addr:String(r[29]||'').trim(),msg:String(r[30]||'').trim()});
+    }
+  }else if(platform==='당근마켓'){
+    /* 당근마켓 "진행중 주문내역" 포맷 — 헤더 기반으로 컬럼 동적 감지
+       [0]주문번호 [1]택배사 [2]운송장번호 [3]주문일시 [4]수령방식 [5]상품명 [6]가격
+       [7]당근닉네임 [8]주문자명 [9]연락처 [10]우편번호 [11]배송주소
+       [12]요청사항 [13]현관출입방법 */
+    const hdr=rows[0].map(h=>String(h||'').trim());
+    const ci={
+      id:   hdr.findIndex(h=>h==='주문번호'),
+      date: hdr.findIndex(h=>h.includes('주문일')),
+      prod: hdr.findIndex(h=>h.includes('상품명')),
+      price:hdr.findIndex(h=>h==='가격'),
+      nick: hdr.findIndex(h=>h.includes('닉네임')),
+      name: hdr.findIndex(h=>h==='주문자명'),
+      phone:hdr.findIndex(h=>h==='연락처'),
+      zip:  hdr.findIndex(h=>h==='우편번호'),
+      addr: hdr.findIndex(h=>h.includes('배송주소')),
+      req:  hdr.findIndex(h=>h.includes('요청사항')),
+      door: hdr.findIndex(h=>h.includes('현관')),
+    };
+    for(let i=1;i<rows.length;i++){
+      const r=rows[i];
+      const orderId=ci.id>=0?String(r[ci.id]||'').trim():'';
+      if(!orderId)continue;
+      const{option,qty}=parseDaangnProduct(ci.prod>=0?String(r[ci.prod]||''):'');
+      const req=ci.req>=0?String(r[ci.req]||'').trim():'';
+      const door=ci.door>=0?String(r[ci.door]||'').trim():'';
+      const msg=[req,door].filter(Boolean).join(' / ');
+      orders.push({rowIdx:i,rawRow:r.slice(),platform:'당근마켓',orderId,
+        orderDate:ci.date>=0?String(r[ci.date]||'').slice(0,10):'',
+        option,payment:ci.price>=0?Number(String(r[ci.price]||'').replace(/[^0-9]/g,''))||0:0,qty,
+        name:ci.name>=0?String(r[ci.name]||'').trim():'',
+        phone:ci.phone>=0?normPhone(r[ci.phone]):'',
+        zip:ci.zip>=0?String(r[ci.zip]||'').trim():'',
+        addr:ci.addr>=0?String(r[ci.addr]||'').trim():'',msg,
+        nickname:ci.nick>=0?String(r[ci.nick]||'').trim():''});
+    }
+  }else{
+    /* 스마트스토어: 1행이 안내문, 2행이 실제 헤더인 경우 자동 감지 */
+    const ssHdrRow=rows[1]&&rows[1].some(h=>String(h||'').includes('상품주문번호'))?rows[1]:rows[0];
+    const ssDataStart=ssHdrRow===rows[1]?2:1;
+    const hIdx=n=>ssHdrRow.findIndex(h=>String(h||'').includes(n));
+    const ci={oid:hIdx('상품주문번호'),name:Math.max(hIdx('수취인명'),hIdx('받는분성명')),
+      phone:Math.max(hIdx('수취인연락처'),hIdx('수취인전화번호')),
+      addr:Math.max(hIdx('통합배송지'),hIdx('배송지')),
+      opt:hIdx('옵션정보'),pname:hIdx('상품명'),qty:hIdx('수량'),
+      pay:Math.max(hIdx('총 주문금액'),hIdx('상품가격'),hIdx('상품금액'),hIdx('결제금액')),
+      msg:Math.max(hIdx('배송메세지'),hIdx('배송메모'),hIdx('배송 메세지')),
+      zip:hIdx('우편번호'),date:hIdx('결제일')};
+    for(let i=ssDataStart;i<rows.length;i++){
+      const r=rows[i];
+      const orderId=String(ci.oid>=0?r[ci.oid]:'').trim();
+      if(!orderId)continue;
+      /* 옵션정보 있으면 사용, 없으면 상품명(네이버 상품명) 사용 */
+      const ssOpt=(ci.opt>=0&&String(r[ci.opt]||'').trim())?String(r[ci.opt]).trim():(ci.pname>=0?String(r[ci.pname]||'').trim():'');
+      orders.push({rowIdx:i,rawRow:r.slice(),platform:'스마트스토어',orderId,
+        orderDate:ci.date>=0?String(r[ci.date]||'').slice(0,10):'',
+        option:ssOpt,payment:Number(ci.pay>=0?r[ci.pay]:0)||0,
+        qty:Number(ci.qty>=0?r[ci.qty]:1)||1,name:String(ci.name>=0?r[ci.name]:'').trim(),
+        phone:normPhone(ci.phone>=0?r[ci.phone]:''),zip:String(ci.zip>=0?r[ci.zip]:'').trim(),
+        addr:String(ci.addr>=0?r[ci.addr]:'').trim(),msg:String(ci.msg>=0?r[ci.msg]:'').trim()});
+    }
+  }
+  return{platform,orders};
+}
+function parseTrk(wb){
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  const map=new Map();
+  for(let i=0;i<rows.length;i++){
+    const r=rows[i];
+    const name=String(r[5]||'').trim(),phone=normPhone(r[8]);
+    const note=String(r[15]||''),carrier=String(r[17]||'').trim(),trackNum=String(r[18]||'').trim();
+    if(!trackNum)continue;
+    const m=note.match(/\[(\d{8,})\]/);
+    if(m){const oid=m[1];if(!map.has('id_'+oid))map.set('id_'+oid,{carrier,trackNum});}
+    if(name){const kf=name+'_'+phone,kn=name+'_';if(!map.has(kf))map.set(kf,{carrier,trackNum});if(!map.has(kn))map.set(kn,{carrier,trackNum});}
+  }
+  return map;
+}
+function findTrk(map,o){
+  if(o.orderId){const b=map.get('id_'+o.orderId);if(b)return b;}
+  return map.get(o.name+'_'+o.phone)||map.get(o.name+'_')||null;
+}
+
+/* ======================================================
+   TAB 0 — 발주서 생성
+====================================================== */
+var _f0=null;
+function onFile0(inp){
+  _f0=inp.files[0];if(!_f0)return;
+  setLabel('drop0','fname0',_f0.name);
+  readXlsx(_f0).then(wb=>{
+    const{platform,orders}=parseDelivery(wb,_f0.name);
+    rawWb0s[platform]=wb;  // 플랫폼별 원본 wb 저장 (쿠팡 업로드 포맷 보존용)
+    // 누적 합산 — 같은 플랫폼 기존 주문 유지하고 중복(orderId) 제거 후 신규만 추가
+    const keepOthers=orders0.filter(o=>o.platform!==platform);
+    const samePlatform=orders0.filter(o=>o.platform===platform);
+    const existIds=new Set(samePlatform.map(o=>String(o.orderId)));
+    const newUnique=orders.filter(o=>!existIds.has(String(o.orderId)));
+    const dupCount=orders.length-newUnique.length;
+    orders0=[...keepOthers,...samePlatform,...newUnique];
+    renderPreview0();show('preview0');
+    scheduleOrdersSave();  // 구글시트에 주문 자동 저장
+    // 플랫폼별 합계 표시
+    const summary=Object.entries(
+      orders0.reduce((a,o)=>{a[o.platform]=(a[o.platform]||0)+1;return a;},{})
+    ).map(([p,n])=>p+' '+n+'건').join(' + ');
+    const dupMsg=dupCount>0?' (중복 '+dupCount+'건 제거)':'';
+    toast('✅ '+platform+' 신규 '+newUnique.length+'건 추가'+dupMsg+' → 전체 '+orders0.length+'건 ('+summary+')');
+  }).catch(e=>{toast('❌ 오류: '+e.message);console.error(e);});
+}
+function renderPreview0(){
+  let c2=0,c3=0,c5=0;
+  orders0.forEach(o=>{const s=extractSize(o.option);if(s==='2kg')c2+=o.qty;else if(s==='3kg')c3+=o.qty;else if(s==='5kg')c5+=o.qty;});
+  document.getElementById('b0total').textContent=orders0.length;
+  document.getElementById('b02kg').textContent=c2;
+  document.getElementById('b03kg').textContent=c3;
+  document.getElementById('b05kg').textContent=c5;
+  const tbody=document.getElementById('tbody0');tbody.innerHTML='';
+  const platColor={'쿠팡':'#e8002d','스마트스토어':'#03c75a','발주방':'#5f4bb6','당근마켓':'#FF6F00'};
+  orders0.forEach((o,i)=>{
+    const a=o.addr.length>28?o.addr.slice(0,28)+'…':o.addr;
+    const m=o.msg.length>22?o.msg.slice(0,22)+'…':o.msg;
+    const pc=platColor[o.platform]||'#888';
+    const platBadge=`<span style="background:${pc};color:#fff;border-radius:3px;padding:1px 5px;font-size:10px;white-space:nowrap">${o.platform==='당근마켓'?'🥕':o.platform==='발주방'?'📞':o.platform==='스마트스토어'?'🟢':'🛒'} ${o.platform}</span>`;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><button class="del-btn" onclick="delRow0(${i})" title="제외">✕</button></td>
+      <td>${i+1}</td><td>${platBadge}</td><td>${esc(o.name)}</td><td>${fmtPhone(o.phone)}</td>
+      <td>${esc(extractSize(o.option)||o.option)}</td><td>${o.qty}</td>
+      <td title="${esc(o.addr)}">${esc(a)}</td><td title="${esc(o.msg)}">${esc(m)}</td>
+      <td style="font-size:11px;color:#bbb">${o.orderId}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function addManualOrder(){
+  const name=document.getElementById('mName').value.trim();
+  const phone=document.getElementById('mPhone').value.trim();
+  const addr=document.getElementById('mAddr').value.trim();
+  if(!name||!phone||!addr){toast('❌ 받는사람, 전화번호, 주소는 필수입니다.');return;}
+  const option=document.getElementById('mOption').value;
+  const qty=parseInt(document.getElementById('mQty').value)||1;
+  const sz=extractSize(option)||'3kg';
+  const defaultPrice={'2kg':15900,'3kg':19900,'5kg':27900};
+  const rawPrice=document.getElementById('mPrice').value;
+  const salePrice=rawPrice?parseInt(rawPrice):(defaultPrice[sz]||19900);
+  const order={
+    orderId:'BJ_'+Date.now(),
+    platform:'발주방',
+    name,phone,
+    zip:document.getElementById('mZip').value.trim(),
+    addr,
+    msg:document.getElementById('mMsg').value.trim(),
+    option,qty,
+    payment:salePrice,
+    orderDate:todayYMD(),
+    rawRow:null
+  };
+  orders0.push(order);
+  renderPreview0();
+  show('preview0');
+  scheduleOrdersSave();  // 구글시트에 주문 자동 저장
+  // 입력 초기화
+  ['mName','mPhone','mZip','mAddr','mMsg','mPrice'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('mQty').value='1';
+  toast('✅ '+name+' 발주방 주문 추가됨');
+}
+
+function delRow0(i){orders0.splice(i,1);renderPreview0();saveOrdersToGAS();}
+function downloadBaljoo(){
+  if(!orders0.length){toast('❌ 발주할 주문이 없습니다.');return;}
+  const HDR=['보내는사람(지정)','우편번호(지정)','주소(지정)','전화번호1(지정)','전화번호2(지정)',
+    '받는사람','우편번호','주소','전화번호1','전화번호2',
+    '수량(A타입)','수량(B타입)','수량(C타입)','운임구분','상품명1','특기사항','운임'];
+  const aoa=[HDR];
+  orders0.forEach(o=>{
+    const sz=extractSize(o.option)||'2kg';
+    // 전화번호는 문자열 강제 지정 (숫자로 변환되어 앞 0 사라지는 것 방지)
+    const ph=o.phone?{t:'s',v:String(o.phone)}:'';
+    const sph={t:'s',v:String(SENDER.phone)};
+    aoa.push([SENDER.name,SENDER.zip,SENDER.addr,sph,'',
+      o.name,o.zip,o.addr,ph,'',o.qty,0,0,3,
+      (o.platform==='쿠팡'
+        ? (o.prodName||`돌망돌망 제주 유기농 친환경 흙당근 ${sz}`)+' '+o.option
+        : o.platform==='스마트스토어'
+          ? o.option||`돌망돌망 제주 유기농 친환경 흙당근 ${sz} ${o.qty}개`
+          : `돌망돌망 제주 유기농 친환경 흙당근 ${o.option||sz} 산지직송 국내산, ${o.qty}개`),
+      o.msg,4500]);
+  });
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=[{wch:12},{wch:8},{wch:30},{wch:14},{wch:8},{wch:10},{wch:8},{wch:40},{wch:14},{wch:8},{wch:10},{wch:10},{wch:10},{wch:8},{wch:50},{wch:35},{wch:6}];
+  XLSX.utils.book_append_sheet(wb,ws,'발주서');
+  XLSX.writeFile(wb,todayMMDD()+' 돌망돌망발주.xlsx');
+  toast('✅ 발주서 다운로드 완료');
+}
+
+/* ======================================================
+   TAB 1 — 송장 처리
+====================================================== */
+var _f1a=null,_f1b=null;
+function refreshTab1UI(){
+  const hasO=orders0.length>0;  // 파일업로드든 GAS불러오기든 orders0 있으면 OK
+  const hasWb=Object.keys(rawWb0s).length>0;
+  const hasGas=gasLoadedOrders.length>0;
+  if(hasO){
+    show('t1OrdOk');hide('t1GasOk');hide('t1GasBtnArea');
+    if(hasWb){
+      // 파일 직접 업로드: DeliveryList 이미 있음 → 업로드 불필요
+      hide('t1OrdUpload');
+      document.getElementById('t1OrdOk').textContent='✅ 발주서탭 주문파일 로드됨 — 송장파일만 업로드하면 됩니다.';
+      document.getElementById('t1step').textContent='1';
+    }else{
+      // GAS 불러오기: 원본 DeliveryList 없음 → 완전한 형식 위해 선택적 업로드 안내
+      show('t1OrdUpload');
+      document.getElementById('t1OrdOk').textContent='☁️ 구글시트 발주 로드됨 — 아래에 원본 DeliveryList도 업로드하면 쿠팡 업로드 파일이 완전한 형식으로 생성됩니다. (없어도 진행 가능)';
+      document.getElementById('t1step').textContent='1';
+    }
+  }else if(hasGas){
+    hide('t1OrdOk');hide('t1OrdUpload');show('t1GasOk');hide('t1GasBtnArea');
+    document.getElementById('t1GasCount').textContent=gasLoadedOrders.length;
+    document.getElementById('t1step').textContent='1';
+  }else{
+    hide('t1OrdOk');show('t1OrdUpload');hide('t1GasOk');
+    document.getElementById('t1step').textContent='2';
+  }
+  const hasOrders=hasO||hasGas;
+  document.getElementById('btnTracking').disabled=hasOrders?!_f1b:!(_f1a&&_f1b);
+}
+function onFile1a(inp){_f1a=inp.files[0];if(_f1a)setLabel('drop1a','fname1a',_f1a.name);refreshTab1UI();}
+function onFile1b(inp){_f1b=inp.files[0];if(_f1b)setLabel('drop1b','fname1b',_f1b.name);refreshTab1UI();}
+function runTracking(){
+  if(!_f1b)return;
+  const hasO=orders0.length>0;           // 파일업로드든 GAS복원이든 orders0 있으면 OK
+  const hasGas=gasLoadedOrders.length>0;
+  const hasWb=Object.keys(rawWb0s).length>0; // 원본 워크북 있는지 (파일 직접 업로드 시)
+  // 원본 워크북 결정: Tab0 파일업로드 → rawWb0s 사용 / 직접 입력 → _f1a 사용 / GAS → null
+  const p1=(hasO||hasGas)?Promise.resolve(hasWb?(rawWb0s['쿠팡']||Object.values(rawWb0s)[0]||null):null):readXlsx(_f1a);
+  // GAS 경로인데 _f1a 제공 시 → rawRow 보충용으로 별도 읽기 (완전한 40컬럼 복원)
+  const p1aux=(hasO||hasGas)&&!hasWb&&_f1a?readXlsx(_f1a):Promise.resolve(null);
+  Promise.all([p1,readXlsx(_f1b),p1aux]).then(([ordWb,trkWb,auxWb])=>{
+    rawWb1=ordWb;
+    let src;
+    if(hasO){src=orders0;}
+    else if(hasGas){src=gasLoadedOrders;}
+    else{const pd=parseDelivery(ordWb,_f1a?_f1a.name:'');src=pd.orders;rawWb1=ordWb;}
+    // GAS 경로 + _f1a 제공: rawWb1 설정 + 주문번호 기준으로 rawRow 보충
+    if((hasO||hasGas)&&!hasWb&&auxWb){
+      rawWb1=auxWb;
+      const auxWs=auxWb.Sheets[auxWb.SheetNames[0]];
+      const auxRows=XLSX.utils.sheet_to_json(auxWs,{header:1,defval:''});
+      const rawRowMap=new Map();
+      for(let i=1;i<auxRows.length;i++){
+        const oid=String(auxRows[i][2]||'').trim();
+        if(oid)rawRowMap.set(oid,auxRows[i].slice());
+      }
+      src=src.map(o=>({...o,rawRow:rawRowMap.get(String(o.orderId||''))||o.rawRow||null}));
+      toast('✅ DeliveryList로 원본 데이터 보충 완료 ('+rawRowMap.size+'건)');
+    }
+    const trkMap=parseTrk(trkWb);
+    let matched=0;const miss=[];
+    orders1=src.map(o=>{const trk=findTrk(trkMap,o);if(trk)matched++;else miss.push(o.name);return{...o,trk};});
+    document.getElementById('t1total').textContent=src.length;
+    document.getElementById('t1matched').textContent=matched;
+    document.getElementById('t1miss').textContent=src.length-matched;
+    const tbody=document.getElementById('tbody1');tbody.innerHTML='';
+    orders1.forEach((o,i)=>{
+      const ok=!!o.trk;const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${i+1}</td><td>${esc(o.name)}</td><td>${esc(extractSize(o.option)||o.option)}</td><td>${o.qty}</td>
+        <td><span class="badge ${ok?'badge-ok':'badge-miss'}">${ok?'✅ 매칭':'❌ 미매칭'}</span></td>
+        <td>${o.trk?esc(o.trk.carrier):'-'}</td><td>${o.trk?o.trk.trackNum:'-'}</td>`;
+      tbody.appendChild(tr);
+    });
+    const me=document.getElementById('missAlert1');
+    if(miss.length>0){me.textContent='⚠️ 미매칭 '+miss.length+'건: '+miss.join(', ');show('missAlert1');}else hide('missAlert1');
+    show('result1');toast('✅ '+matched+'/'+src.length+'건 매칭 완료');
+  }).catch(e=>{toast('❌ 오류: '+e.message);console.error(e);});
+}
+const DL_HEADER=['번호','묶음배송번호','주문번호','택배사','운송장번호','분리배송 Y/N','분리배송 출고예정일','주문시 출고예정일','출고일(발송일)','주문일','등록상품명','등록옵션명','노출상품명(옵션명)','노출상품ID','옵션ID','최초등록등록상품명/옵션명','업체상품코드','바코드','결제액','배송비구분','배송비','도서산간 추가배송비','구매수(수량)','옵션판매가(판매단가)','구매자','구매자전화번호','수취인이름','수취인전화번호','우편번호','수취인 주소','배송메세지','상품별 추가메시지','주문자 추가메시지','배송완료일','구매확정일자','개인통관번호(PCCC)','통관용수취인전화번호','기타','결제위치','배송유형'];
+function buildDLRow(o,seq){
+  const row=new Array(40).fill('');
+  row[0]=seq;
+  row[1]=String(o.bundleId||o.orderId||''); // 묶음배송번호 — GAS 경유 시 없으면 주문번호로 대체 (필수항목)
+  row[2]=String(o.orderId||'');     // 주문번호 (텍스트 강제 — 숫자로 저장되면 쿠팡 매칭 실패)
+  row[3]=o.trk.carrier;
+  row[4]=String(o.trk.trackNum);
+  row[5]='N';                       // 분리배송 Y/N — 기본값 N (필수항목, 분리배송 없으므로 항상 N)
+  row[14]=String(o.optionId||'');   // 옵션ID (필수항목 — DeliveryList 원본에서 저장된 값)
+  row[9]=normDate(o.orderDate)||todayYMD();  // ISO 형식 방지 (GAS에서 T포함 날짜로 올 수 있음)
+  row[11]=o.option;
+  row[18]=o.payment;
+  row[22]=o.qty;
+  row[26]=o.name;
+  row[27]=fmtPhone(o.phone);
+  row[28]=String(o.zip||'');        // 우편번호 (텍스트 강제)
+  row[29]=o.addr;
+  row[30]=o.msg;
+  return row;
+}
+function downloadCoupangUpload(){
+  if(!orders1.length)return;
+  const cpOrders=orders1.filter(o=>o.platform==='쿠팡'&&o.trk);
+  if(!cpOrders.length){toast('쿠팡 주문이 없습니다.');return;}
+  const wb=XLSX.utils.book_new();
+  {
+    // rawWb1 있으면 원본 헤더 사용, 없으면 DL_HEADER 사용
+    const headerRow=rawWb1
+      ? XLSX.utils.sheet_to_json(rawWb1.Sheets[rawWb1.SheetNames[0]],{header:1,defval:''})[0]
+      : DL_HEADER;
+    const sheetName=rawWb1?(rawWb1.SheetNames[0]||'Delivery'):'Delivery';
+    const out=[headerRow];
+    let seq=1;
+    orders1.forEach(o=>{
+      if(!o.trk||o.platform!=='쿠팡')return;
+      if(o.rawRow&&o.rawRow.length>0){
+        // rawRow 있음 (파일 직접 업로드 OR GAS rawRowJson 복원) — 원본 40컬럼 그대로
+        const row=o.rawRow.slice();row[3]=o.trk.carrier;row[4]=String(o.trk.trackNum);out.push(row);
+      }else{
+        // rawRow 없음 — buildDLRow 최소 재구성 (fallback)
+        out.push(buildDLRow(o,seq));
+      }
+      seq++;
+    });
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(out),sheetName);
+  }
+  XLSX.writeFile(wb,'쿠팡송장업로드_'+todayYMD().replace(/-/g,'')+'.xlsx');
+  toast('✅ 쿠팡 대량업로드 파일 다운로드!');
+}
+
+/* 당근마켓 운송장 등록용 파일 생성
+   당근마켓 업로드 포맷: 원본 14컬럼 구조에 택배사/운송장번호 채워 넣기
+   실제 당근마켓 포맷: [0]주문번호 [1]택배사 [2]운송장번호 [3]주문일시 [4]수령방식
+                       [5]상품명 [6]가격 [7]당근닉네임 [8]주문자명 [9]연락처
+                       [10]우편번호 [11]배송주소 [12]요청사항 [13]현관출입방법 */
+function downloadDaangnUpload(){
+  if(!orders1.length)return;
+  const dgOrders=orders1.filter(o=>o.platform==='당근마켓'&&o.trk);
+  if(!dgOrders.length){toast('당근마켓 주문이 없거나 매칭된 운송장이 없습니다.');return;}
+  const HDR=['주문번호','택배사','운송장번호','주문일시','수령방식','상품명','가격',
+             '당근 닉네임','주문자명','연락처','우편번호','배송주소','요청사항','현관 출입 방법'];
+  const aoa=[HDR];
+  dgOrders.forEach(o=>{
+    const row=o.rawRow?o.rawRow.slice():new Array(14).fill('');
+    row[1]=o.trk.carrier||'CJ대한통운';  // [1] 택배사
+    row[2]=String(o.trk.trackNum);        // [2] 운송장번호
+    aoa.push(row);
+  });
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=[{wch:14},{wch:12},{wch:16},{wch:18},{wch:8},{wch:45},{wch:10},
+               {wch:14},{wch:10},{wch:14},{wch:10},{wch:45},{wch:25},{wch:22}];
+  XLSX.utils.book_append_sheet(wb,ws,'주문 목록');
+  XLSX.writeFile(wb,'당근마켓_운송장등록_'+todayYMD().replace(/-/g,'')+'.xlsx');
+  toast('✅ 당근마켓 운송장 등록 파일 다운로드!');
+}
+
+function downloadSSUpload(){
+  if(!orders1.length)return;
+  const ssOrders=orders1.filter(o=>o.platform==='스마트스토어'&&o.trk);
+  if(!ssOrders.length){toast('스마트스토어 주문이 없거나 매칭된 운송장이 없습니다.');return;}
+  const HDR=['상품주문번호','배송방법','택배사','송장번호'];
+  const aoa=[HDR];
+  ssOrders.forEach(o=>{
+    aoa.push([o.orderId,'택배,등기,소포',o.trk.carrier||'CJ대한통운',String(o.trk.trackNum)]);
+  });
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=[{wch:20},{wch:16},{wch:14},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,ws,'발송처리');
+  XLSX.writeFile(wb,'스마트스토어_일괄발송_'+todayYMD().replace(/-/g,'')+'.xlsx');
+  toast('✅ 스마트스토어 일괄발송 파일 다운로드!');
+}
+
+/* ======================================================
+   TAB 2 — 정산 현황
+====================================================== */
+function addToSettlement(){
+  if(!orders1.length)return;
+  const data=loadS();const ids=new Set(data.map(r=>String(r.orderId)));
+  let added=0;
+  orders1.forEach(o=>{
+    if(!o.trk||ids.has(String(o.orderId)))return;
+    const feeR=FEE_RT[o.platform]??0.108;  // 주문별 플랫폼 수수료
+    const sz=extractSize(o.option);
+    const totalPayment=o.payment*o.qty;  // 단가×수량 = 총 판매가
+    const cost=getSupplyForDate(o.orderDate||todayYMD())[sz]||0;
+    const totalCost=cost*o.qty;
+    const fee=Math.round(totalPayment*feeR);const profit=totalPayment-totalCost-fee;
+    const margin=totalPayment>0?profit/totalPayment*100:0;
+    data.push({orderId:o.orderId,date:o.orderDate||todayYMD(),name:o.name,
+      platform:o.platform,option:o.option,qty:o.qty,salePrice:totalPayment,
+      costPrice:totalCost,commission:fee,profit,margin:parseFloat(margin.toFixed(1)),
+      trackNum:o.trk.trackNum,carrier:o.trk.carrier});
+    added++;
+  });
+  saveS(data);
+  if(added>0){
+    // 정산 추가된 주문 orders0에서 제거 + GAS 동기화
+    const addedIds=new Set(orders1.filter(o=>o.trk&&!ids.has(String(o.orderId))).map(o=>String(o.orderId)));
+    orders0=orders0.filter(o=>!addedIds.has(String(o.orderId)));
+    if(orders0.length===0){rawWb0s={};hide('preview0');}
+    else renderPreview0();
+    saveOrdersToGAS();  // 즉시 GAS 동기화
+    toast('✅ '+added+'건 정산 추가 완료, 발주목록에서 제거됨');
+    switchTab(2);
+  }else{
+    toast('ℹ️ 모두 이미 정산에 추가된 주문입니다.');
+  }
+}
+function toggleHistSection(){
+  document.getElementById('histSection').classList.toggle('hidden');
+}
+function onFileHist(inp){
+  const files=Array.from(inp.files||[]);if(!files.length)return;
+  if(files.length>1){
+    // 여러 파일: 순차 처리
+    let idx=0;
+    let totalAdded=0,totalSkipped=0,totalFailed=0;
+    function processNext(){
+      if(idx>=files.length){
+        toast(`✅ ${files.length}개 파일 완료 — 추가 ${totalAdded}건`+(totalSkipped?` (중복 ${totalSkipped}건 스킵)`:'')+( totalFailed?` (실패 ${totalFailed}건)`:''));
+        renderSettle();
+        return;
+      }
+      const f=files[idx++];
+      setLabel('dropHist','fnameHist',f.name+' ('+idx+'/'+files.length+')');
+      processSonangFile(f,(added,skipped,failed)=>{totalAdded+=added;totalSkipped+=skipped;totalFailed+=failed;processNext();});
+    }
+    processNext();
+    return;
+  }
+  const f=files[0];
+  setLabel('dropHist','fnameHist',f.name);
+  processSonangFile(f,(added,skipped,failed)=>{
+    let msg=`✅ ${added}건 추가됨`;
+    if(skipped)msg+=` (중복 ${skipped}건 스킵)`;
+    if(failed)msg+=` (옵션불명 ${failed}건 제외)`;
+    toast(msg);
+    if(added>0)document.getElementById('histSection').classList.add('hidden');
+  });
+}
+
+function processSonangFile(f, done){
+  readXlsx(f).then(wb=>{
+    // ── 소낭친환경 발주_송장번호 파일 파싱 ──
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+
+    // 파일명에서 날짜 추출 (0413, 0501 등 → 2026-04-13)
+    const dmatch=f.name.match(/^(\d{2})(\d{2})/);
+    let fileDate=dmatch?`2026-${dmatch[1]}-${dmatch[2]}`:todayYMD();
+    const dateInput=prompt(`정산 날짜를 확인하세요 (YYYY-MM-DD):`,fileDate);
+    if(dateInput===null)return;
+    fileDate=dateInput.trim()||fileDate;
+
+    const SUPPLY2=getSupplyForDate(fileDate); // 날짜별 공급가 이력에서 자동 조회
+
+    const data=loadS();
+    const ids=new Set(data.map(r=>String(r.orderId)));
+    let added=0,skipped=0,failed=0;
+
+    for(let i=1;i<rows.length;i++){
+      const row=rows[i];
+      const name=String(row[5]||'').trim();
+      if(!name||name==='받는사람')continue;
+      const phone=String(row[8]||'').trim();
+      const productName=String(row[14]||'').trim();
+      const qtyA=parseInt(row[10])||1;
+      const carrier=String(row[17]||'').trim();
+      const trackNum=String(row[18]||'').trim();
+      if(!trackNum){failed++;continue;}
+
+      const orderId='TRK-'+trackNum;
+      if(ids.has(orderId)){skipped++;continue;}
+
+      // 플랫폼 감지
+      let platform='발주방';
+      if(phone.startsWith('050'))platform='쿠팡';
+      else if(productName.startsWith('['))platform='스마트스토어';
+
+      // 옵션 추출
+      let option=null;
+      let m=productName.match(/\((\d+kg)\s+\d+개\)/i);
+      if(!m)m=productName.match(/\((\d+kg)\)/i);
+      if(!m)m=productName.match(/(\d+kg)\s+\d+개\s*$/i);
+      if(!m)m=productName.match(/\d+개\s+(\d+kg)\s*$/i);
+      if(!m){
+        const kgs=[...productName.matchAll(/(\d+)kg/gi)].map(x=>x[1]+'kg');
+        const uniq=[...new Set(kgs)];
+        if(uniq.length===1)option=uniq[0];
+      } else {
+        option=m[1].toLowerCase();
+      }
+      if(!option){failed++;continue;}
+
+      const sz=extractSize(option);
+      const costPrice=(SUPPLY2[sz]||0)*qtyA;
+      const feeR=FEE_RT[platform]||0;
+
+      // 판매가: 플랫폼별 기본값 (수정 가능) — 발주방은 수수료 0%, 쿠팡과 동일 단가 적용
+      const SALE_PRICE={'쿠팡':{'2kg':15900,'3kg':19900,'5kg':27900},
+                        '스마트스토어':{'2kg':15400,'3kg':19400,'5kg':27400},
+                        '발주방':{'2kg':15900,'3kg':19900,'5kg':27900},
+                        '당근마켓':{'2kg':15900,'3kg':19900,'5kg':27900}};
+      const salePrice=((SALE_PRICE[platform]||{})[sz]||0)*qtyA;
+      const commission=Math.round(salePrice*feeR);
+      const profit=salePrice-costPrice-commission;
+      const margin=salePrice>0?parseFloat((profit/salePrice*100).toFixed(1)):0;
+
+      data.push({orderId,date:fileDate,name,platform,option:sz||option,qty:qtyA,
+        salePrice,costPrice,commission,profit,margin,trackNum,carrier});
+      ids.add(orderId);
+      added++;
+    }
+
+    if(added>0){saveS(data);renderSettle();}
+    if(typeof done==='function'){done(added,skipped,failed);return;}
+    if(!added){toast('⏭️ 새 데이터 없음 — 모두 중복 스킵');return;}
+    let msg=`✅ ${added}건 추가됨`;
+    if(skipped)msg+=` (중복 ${skipped}건 스킵)`;
+    if(failed)msg+=` (옵션불명 ${failed}건 제외)`;
+    toast(msg);
+    if(added>0)document.getElementById('histSection').classList.add('hidden');
+  }).catch(e=>{toast('❌ 오류: '+e.message);console.error(e);if(typeof done==='function')done(0,0,0);});
+}
+let _dateSort='desc'; // desc=최신순(▼), asc=오래된순(▲)
+function toggleDateSort(){
+  _dateSort=_dateSort==='desc'?'asc':'desc';
+  const arrow=document.getElementById('dateSortArrow');
+  if(arrow)arrow.textContent=_dateSort==='desc'?'▼':'▲';
+  renderSettle();
+}
+function getSortedFiltered(){
+  const data=getFilteredData();
+  return data.slice().sort((a,b)=>{
+    const da=normDate(a.date),db=normDate(b.date);
+    return _dateSort==='desc'?(db>da?1:db<da?-1:0):(da>db?1:da<db?-1:0);
+  });
+}
+let _activePeriod='thisMonth';
+
+function setPeriod(p){
+  _activePeriod=p;
+  const today=todayYMD();
+  const thisM=today.slice(0,7);
+  const lastM=(()=>{const d=new Date(today);d.setMonth(d.getMonth()-1);return d.toISOString().slice(0,7);})();
+  const sel=document.getElementById('fpMonthSel');
+  // 버튼 스타일 토글
+  const btns=['fpBtn0','fpBtn1','fpBtn2'];
+  const activeIdx=p==='thisMonth'?0:p==='lastMonth'?1:p==='all'?2:-1;
+  btns.forEach((id,i)=>{
+    const el=document.getElementById(id);if(!el)return;
+    el.style.background=i===activeIdx?'#ff6b35':'';
+    el.style.color=i===activeIdx?'white':'';
+    el.className=i===activeIdx?'btn btn-sm':'btn btn-sm btn-outline';
+    el.style.borderRadius='20px';
+  });
+  // 날짜 필드 자동 설정
+  const fFrom=document.getElementById('fFrom');
+  const fTo=document.getElementById('fTo');
+  if(p==='thisMonth'){
+    if(fFrom)fFrom.value=thisM+'-01';
+    if(fTo)fTo.value=today;
+    if(sel)sel.style.display='none';
+  } else if(p==='lastMonth'){
+    if(fFrom)fFrom.value=lastM+'-01';
+    const lastEnd=new Date(new Date(lastM+'-01').getFullYear(),new Date(lastM+'-01').getMonth()+1,0);
+    if(fTo)fTo.value=lastEnd.toISOString().slice(0,10);
+    if(sel)sel.style.display='none';
+  } else if(p==='all'){
+    if(fFrom)fFrom.value='';
+    if(fTo)fTo.value='';
+    if(sel)sel.style.display='none';
+  } else if(p==='pick'){
+    const mv=sel?sel.value:'';
+    if(fFrom&&mv)fFrom.value=mv+'-01';
+    if(fTo&&mv){const e=new Date(new Date(mv+'-01').getFullYear(),new Date(mv+'-01').getMonth()+1,0);fTo.value=e.toISOString().slice(0,10);}
+  }
+  renderSettle();
+}
+
+function buildMonthPicker(){
+  const sel=document.getElementById('fpMonthSel');if(!sel)return;
+  const all=loadS();
+  const months=[...new Set(all.map(r=>normDate(r.date).slice(0,7)))].sort().reverse();
+  sel.innerHTML='<option value="">월 선택</option>'+months.map(m=>`<option value="${m}">${m}</option>`).join('');
+}
+
+function getFilteredData(){
+  const name=(document.getElementById('fName')?.value||'').toLowerCase();
+  const ch=document.getElementById('fChannel')?.value||'';
+  const opt=document.getElementById('fOption')?.value||'';
+  const from=document.getElementById('fFrom')?.value||'';
+  const to=document.getElementById('fTo')?.value||'';
+  const all=loadS();
+  return all.filter(r=>{
+    if(name&&!r.name.toLowerCase().includes(name))return false;
+    if(ch&&r.platform!==ch)return false;
+    if(opt&&!String(r.option||'').includes(opt.replace('kg','')))return false;
+    if(from&&r.date<from)return false;
+    if(to&&r.date>to)return false;
+    return true;
+  });
+}
+function applyFilter(){renderSettle();}
+function clearFilter(){
+  ['fName','fFrom','fTo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['fChannel','fOption'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  _activePeriod='all';setPeriod('all');
+  renderSettle();
+}
+
+/* ======================================================
+   공급처 정산 현황 (소낭친환경)
+====================================================== */
+const SUPPLIER_PAY_SK='dolmang_supplier_pays_v1';
+
+function loadSupplierPays(){
+  try{return JSON.parse(localStorage.getItem(SUPPLIER_PAY_SK)||'{}');}catch(e){return {};}
+}
+function saveSupplierPays(data){
+  localStorage.setItem(SUPPLIER_PAY_SK,JSON.stringify(data));
+}
+
+function renderSupplierSettle(){
+  const all=loadS();
+  const pays=loadSupplierPays();
+
+  // Group by month (YYYY-MM)
+  const months={};
+  all.forEach(r=>{
+    const m=normDate(r.date).slice(0,7); // "2026-04"
+    if(!months[m])months[m]={records:[],costTotal:0};
+    months[m].records.push(r);
+    months[m].costTotal+=(r.costPrice||0); // costPrice는 이미 qty 포함 총금액
+  });
+
+  const container=document.getElementById('supplierSettleBody');
+  if(!container)return;
+  container.innerHTML='';
+
+  const sortedMonths=Object.keys(months).sort();
+  sortedMonths.forEach(m=>{
+    const g=months[m];
+    const isPaid=pays[m]&&pays[m].paidAmount>0;
+    const paidAmt=isPaid?pays[m].paidAmount:0;
+    const paidDate=isPaid?pays[m].paidDate:'';
+    const color=isPaid?'#4caf50':'#f59e0b';
+    const bg=isPaid?'#f0fff4':'#fffbea';
+    const badge=isPaid
+      ?'<span style="background:#4caf50;color:white;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700">✅ 지급완료</span>'
+      :'<span style="background:#f59e0b;color:white;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700">⏳ 미지급</span>';
+
+    const paidDateHtml=isPaid?`<div style="font-size:11px;color:#888;margin-top:1px">지급일: ${paidDate}</div>`:'';
+    const discount=isPaid&&paidAmt<g.costTotal?g.costTotal-paidAmt:0;
+    const discountHtml=discount>0
+      ?`<div style="font-size:12px;color:#1976d2;margin-top:2px">할인: <b>${comma(discount)}원</b> <span style="color:#aaa">(${((discount/g.costTotal)*100).toFixed(1)}%)</span></div>`:'';
+    const paidAmtHtml=isPaid?`<div style="font-size:13px;font-weight:700;color:#4caf50;margin-top:4px">실지급: ${comma(paidAmt)}원</div>`:'';
+
+    const card=document.createElement('div');
+    card.style.cssText=`border:2px solid ${color};border-radius:10px;padding:14px 18px;background:${bg};min-width:200px;position:relative`;
+    card.innerHTML=`
+      <div style="font-size:15px;font-weight:700;margin-bottom:6px">${m} ${badge}</div>
+      <div style="font-size:13px;color:#555">${g.records.length}건 | 원가합계 <b>${comma(g.costTotal)}원</b></div>
+      ${paidAmtHtml}${discountHtml}${paidDateHtml}
+      <div style="margin-top:8px">
+        ${isPaid
+          ?`<button class="btn btn-sm btn-outline" onclick="editSupplierPay('${m}')" style="font-size:11px">✏️ 수정</button>`
+          :`<button class="btn btn-sm" style="background:#f59e0b;color:white;font-size:11px" onclick="markSupplierPaid('${m}',${g.costTotal})">💰 정산완료 등록</button>`}
+      </div>`;
+    container.appendChild(card);
+  });
+
+  // 합계 미지급 표시
+  const unpaidTotal=sortedMonths.filter(m=>!pays[m]||!pays[m].paidAmount).reduce((s,m)=>s+months[m].costTotal,0);
+  if(unpaidTotal>0){
+    const sumCard=document.createElement('div');
+    sumCard.style.cssText='border:2px solid #f44336;border-radius:10px;padding:14px 18px;background:#fff5f5;min-width:180px;align-self:flex-start';
+    sumCard.innerHTML=`<div style="font-size:12px;color:#888;margin-bottom:4px">총 미지급 원가</div><div style="font-size:20px;font-weight:800;color:#f44336">${comma(unpaidTotal)}원</div>`;
+    container.appendChild(sumCard);
+  }
+}
+
+function markSupplierPaid(month, suggestedAmt){
+  const amt=prompt(`${month} 소낭친환경 실지급액을 입력하세요 (원):\n(원가합계: ${comma(suggestedAmt)}원)`, suggestedAmt);
+  if(amt===null)return;
+  const parsed=parseInt(amt.replace(/,/g,''));
+  if(isNaN(parsed)||parsed<=0){alert('올바른 금액을 입력하세요.');return;}
+  const dateStr=prompt('지급일을 입력하세요 (YYYY-MM-DD):', new Date().toISOString().slice(0,10));
+  if(!dateStr)return;
+  const pays=loadSupplierPays();
+  pays[month]={paidAmount:parsed,paidDate:dateStr,note:''};
+  saveSupplierPays(pays);
+  renderSupplierSettle();
+  toast('정산완료 등록됨: '+month+' '+comma(parsed)+'원');
+}
+
+function editSupplierPay(month){
+  const pays=loadSupplierPays();
+  const cur=pays[month]||{};
+  const amt=prompt(`${month} 지급액 수정:`,cur.paidAmount||'');
+  if(amt===null)return;
+  if(amt===''||amt==='0'){
+    if(confirm('이 월 정산 기록을 삭제하시겠습니까?')){
+      delete pays[month];
+      saveSupplierPays(pays);
+      renderSupplierSettle();
+      toast(month+' 정산 기록 삭제됨');
+    }
+    return;
+  }
+  const parsed=parseInt(amt.replace(/,/g,''));
+  if(isNaN(parsed)){alert('올바른 금액을 입력하세요.');return;}
+  const dateStr=prompt('지급일:', cur.paidDate||new Date().toISOString().slice(0,10));
+  if(!dateStr)return;
+  pays[month]={paidAmount:parsed,paidDate:dateStr,note:cur.note||''};
+  saveSupplierPays(pays);
+  renderSupplierSettle();
+  toast(month+' 정산 수정됨');
+}
+
+let _summaryView='total';
+function switchSummaryView(v){
+  _summaryView=v;
+  document.getElementById('viewTotal').style.display=v==='total'?'':'none';
+  document.getElementById('viewMonth').style.display=v==='month'?'':'none';
+  document.getElementById('btnViewTotal').classList.toggle('active',v==='total');
+  document.getElementById('btnViewMonth').classList.toggle('active',v==='month');
+}
+
+function renderSettle(){
+  renderSupplierSettle();
+  const all=loadS();           // 전체 데이터 — 요약/월별에 사용
+  const filtered=getFilteredData(); // 기간필터 적용 — 테이블에만 사용
+
+  // 필터 상태 표시
+  const isFiltered=(filtered.length!==all.length);
+  if(isFiltered){show('filterTag');document.getElementById('filterCount').textContent=filtered.length+'/'+all.length+'건 표시';}
+  else{hide('filterTag');document.getElementById('filterCount').textContent=all.length+'건';}
+
+  // ── 전체 합계 요약 (all 기준) ──
+  let tS=0,tC=0,tF=0,tP=0,c2=0,c3=0,c5=0;
+  all.forEach(r=>{
+    tS+=r.salePrice;tC+=r.costPrice;tF+=r.commission;tP+=r.profit;
+    const sz=extractSize(r.option);
+    if(sz==='2kg')c2+=r.qty;else if(sz==='3kg')c3+=r.qty;else if(sz==='5kg')c5+=r.qty;
+  });
+  const tM=tS>0?tP/tS*100:0;
+  document.getElementById('s2count').textContent=all.length;
+  document.getElementById('s2sales').textContent=comma(tS)+'원';
+  document.getElementById('s2sonang').textContent=comma(tC)+'원';
+  document.getElementById('s2fee').textContent=comma(tF)+'원';
+  document.getElementById('s2profit').textContent=comma(tP)+'원';
+  document.getElementById('s2margin').textContent=safeMargin(tM);
+  document.getElementById('s2_2kg').textContent=c2+'개';
+  document.getElementById('s2_3kg').textContent=c3+'개';
+  document.getElementById('s2_5kg').textContent=c5+'개';
+
+  // ── 월별 요약 (all 기준) ──
+  const months={};
+  all.forEach(r=>{
+    const m=normDate(r.date).slice(0,7);
+    if(!months[m])months[m]={cnt:0,sale:0,cost:0,fee:0,profit:0,c2:0,c3:0,c5:0};
+    const mo=months[m];
+    mo.cnt++;mo.sale+=r.salePrice;mo.cost+=r.costPrice;mo.fee+=r.commission;mo.profit+=r.profit;
+    const sz=extractSize(r.option);
+    if(sz==='2kg')mo.c2+=r.qty;else if(sz==='3kg')mo.c3+=r.qty;else if(sz==='5kg')mo.c5+=r.qty;
+  });
+  const tbody2=document.getElementById('tbodyMonth');tbody2.innerHTML='';
+  const mKeys=Object.keys(months).sort();
+  mKeys.forEach(m=>{
+    const mo=months[m];const mg=mo.sale>0?mo.profit/mo.sale*100:0;
+    const pc=mo.profit>=0?'pos':'neg';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${m}</td><td>${mo.cnt}건</td><td>${comma(mo.sale)}원</td><td>${comma(mo.cost)}원</td>
+      <td>${comma(mo.fee)}원</td><td class="${pc}">${comma(mo.profit)}원</td><td>${safeMargin(mg)}</td>
+      <td>${mo.c2}개</td><td>${mo.c3}개</td><td>${mo.c5}개</td>`;
+    tbody2.appendChild(tr);
+  });
+  if(mKeys.length>1){
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>합계</td><td>${all.length}건</td><td>${comma(tS)}원</td><td>${comma(tC)}원</td>
+      <td>${comma(tF)}원</td><td class="${tP>=0?'pos':'neg'}">${comma(tP)}원</td><td>${safeMargin(tM)}</td>
+      <td>${c2}개</td><td>${c3}개</td><td>${c5}개</td>`;
+    tbody2.appendChild(tr);
+  }
+
+  // ── 정산 내역 테이블 (filtered + 날짜 정렬) ──
+  const sorted=getSortedFiltered();
+  const tbody=document.getElementById('tbodySettle');tbody.innerHTML='';
+  if(!sorted.length){show('emptyMsg');return;}
+  hide('emptyMsg');
+  sorted.forEach((r,i)=>{
+    const pc=r.profit>=0?'profit-positive':'profit-negative';
+    const isMulti=r.qty>1;
+    const tr=document.createElement('tr');
+    tr.id='sr_'+r.orderId;
+    if(isMulti) tr.style.cssText='background:linear-gradient(90deg,#fff8e1 0%,#fff 60%);border-left:3px solid #f59e0b';
+    const qtyCell=isMulti?`<td><span style="background:#f59e0b;color:#fff;font-weight:700;padding:1px 7px;border-radius:10px;font-size:12px">${r.qty}</span></td>`:`<td>${r.qty}</td>`;
+    tr.innerHTML=`<td>${i+1}</td><td>${esc(normDate(r.date))}</td><td>${esc(r.name)}</td>
+      <td><span class="badge ${r.platform==='쿠팡'?'badge-cp':r.platform==='발주방'?'badge-bj':'badge-ss'}">${esc(r.platform)}</span></td>
+      <td>${esc(extractSize(r.option)||r.option)}</td>${qtyCell}
+      <td>${comma(r.salePrice)}원</td><td>${comma(r.costPrice)}원</td><td>${comma(r.commission)}원</td>
+      <td class="${pc}">${comma(r.profit)}원</td><td>${safeMargin(r.margin)}</td>
+      <td style="font-size:11px">${esc(r.trackNum||'')}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-outline btn-sm" onclick="editSettle('${r.orderId}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="delSettle('${r.orderId}')" style="margin-left:3px">🗑️</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+function editSettle(oid){
+  const data=loadS();const r=data.find(x=>String(x.orderId)===String(oid));if(!r)return;
+  const tr=document.getElementById('sr_'+oid);if(!tr)return;
+  tr.classList.add('editing');
+  tr.innerHTML=`<td>✏️</td>
+    <td><input class="edit-input" id="ei_date" value="${esc(normDate(r.date))}" style="width:100px"></td>
+    <td><input class="edit-input" id="ei_name" value="${esc(r.name)}"></td>
+    <td><span class="badge ${r.platform==='쿠팡'?'badge-cp':r.platform==='발주방'?'badge-bj':'badge-ss'}">${esc(r.platform)}</span></td>
+    <td><input class="edit-input" id="ei_opt" value="${esc(r.option)}" style="width:65px"></td>
+    <td><input class="edit-input" id="ei_qty" value="${r.qty}" type="number" style="width:44px"></td>
+    <td><input class="edit-input" id="ei_sale" value="${r.salePrice}" type="number" style="width:72px"></td>
+    <td><input class="edit-input" id="ei_cost" value="${r.costPrice}" type="number" style="width:72px"></td>
+    <td><input class="edit-input" id="ei_fee" value="${r.commission}" type="number" style="width:72px"></td>
+    <td colspan="2" style="color:#aaa;font-size:11px;text-align:center">저장시 자동계산</td>
+    <td><input class="edit-input" id="ei_trk" value="${esc(r.trackNum||'')}"></td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-success btn-sm" onclick="confirmEdit('${oid}')">✅ 확인</button>
+      <button class="btn btn-outline btn-sm" onclick="renderSettle()" style="margin-left:3px">취소</button>
+    </td>`;
+}
+function confirmEdit(oid){
+  const data=loadS();const idx=data.findIndex(x=>String(x.orderId)===String(oid));if(idx<0)return;
+  const r=data[idx];
+  const g=id=>document.getElementById('ei_'+id);
+  const sale=Number(g('sale').value)||r.salePrice;
+  const cost=Number(g('cost').value)||r.costPrice;
+  const fee=Number(g('fee').value)||r.commission;
+  const profit=sale-cost-fee;
+  const margin=sale>0?profit/sale*100:0;
+  data[idx]={...r,date:g('date').value||r.date,name:g('name').value||r.name,
+    option:g('opt').value||r.option,qty:Number(g('qty').value)||r.qty,
+    salePrice:sale,costPrice:cost,commission:fee,profit,
+    margin:parseFloat(margin.toFixed(1)),trackNum:g('trk').value};
+  saveS(data);renderSettle();toast('✅ 수정 완료');
+}
+function delSettle(oid){
+  if(!confirm('이 항목을 삭제하시겠습니까?'))return;
+  const data=loadS().filter(r=>String(r.orderId)!==String(oid));
+  saveS(data);renderSettle();toast('삭제됨');
+}
+function deduplicateSettlement(){
+  const data=loadS();
+  const seen=new Set();
+  const deduped=data.filter(r=>{
+    const key=String(r.orderId);
+    if(seen.has(key))return false;
+    seen.add(key);return true;
+  });
+  const removed=data.length-deduped.length;
+  if(removed===0){toast('중복 항목이 없습니다.');return;}
+  if(!confirm(`중복 ${removed}건을 제거합니다. (${data.length}건 → ${deduped.length}건)\n계속하시겠습니까?`))return;
+  saveS(deduped);renderSettle();
+  toast(`✅ 중복 ${removed}건 제거 완료 — ${deduped.length}건 남음`);
+}
+async function clearSettlement(){
+  if(!confirm('정산 데이터 전체를 삭제하시겠습니까?\n로컬 + 깃허브 모두 삭제됩니다. 되돌릴 수 없습니다.'))return;
+  localStorage.removeItem(SK);
+  try{
+    _settleSHA=await ghWrite(GH_SETTLE,[],_settleSHA,'정산 초기화');
+    setSyncStatus('ok','초기화 완료');
+  }catch(e){setSyncStatus('err','로컬 초기화 완료 (깃허브 연결 실패)');}
+  renderSettle();toast('✅ 초기화 완료 — 로컬 + 깃허브 비움');
+}
+function downloadSettlement(){
+  const data=getFilteredData();if(!data.length){toast('정산 데이터가 없습니다.');return;}
+  const HDR=['#','날짜','구매자','채널','옵션','수량','판매가','매입가','수수료','순이익','마진율(%)','송장번호'];
+  const aoa=[HDR];let tS=0,tC=0,tF=0,tP=0;
+  data.forEach((r,i)=>{
+    aoa.push([i+1,normDate(r.date),r.name,r.platform,r.option,r.qty,r.salePrice,r.costPrice,r.commission,r.profit,(isFinite(Number(r.margin))?parseFloat(Number(r.margin).toFixed(1)):0),r.trackNum||'']);
+    tS+=r.salePrice;tC+=r.costPrice;tF+=r.commission;tP+=r.profit;
+  });
+  const tM=tS>0?tP/tS*100:0;
+  aoa.push(['합계','','','','','',tS,tC,tF,tP,parseFloat(tM.toFixed(1)),'']);
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=[{wch:4},{wch:12},{wch:10},{wch:12},{wch:16},{wch:5},{wch:10},{wch:10},{wch:10},{wch:10},{wch:9},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,ws,'정산');
+  XLSX.writeFile(wb,'당근_정산_'+todayYMD().replace(/-/g,'')+'.xlsx');
+  toast('✅ 정산 엑셀 다운로드!');
+}
+
+/* ======================================================
+   DRAG & DROP
+====================================================== */
+function setupDrop(aId,fId,fn){
+  const a=document.getElementById(aId);if(!a)return;
+  a.addEventListener('dragover',e=>{e.preventDefault();a.style.borderColor='#ff6b35';});
+  a.addEventListener('dragleave',()=>{a.style.borderColor='';});
+  a.addEventListener('drop',e=>{
+    e.preventDefault();a.style.borderColor='';
+    const f=e.dataTransfer.files[0];if(!f)return;
+    try{const dt=new DataTransfer();dt.items.add(f);document.getElementById(fId).files=dt.files;fn(document.getElementById(fId));}
+    catch(ex){fn({files:[f]});}
+  });
+}
+setupDrop('drop0','file0',onFile0);
+setupDrop('drop1a','file1a',onFile1a);
+setupDrop('drop1b','file1b',onFile1b);
+setupDrop('dropHist','fileHist',onFileHist);
+
+/* ======================================================
+   TAB 0 — 구글시트에서 미처리 발주 수동 불러오기
+====================================================== */
+async function loadOrdersForTab0(){
+  const btn=document.getElementById('btnGasLoad0');
+  const status=document.getElementById('t0GasStatus');
+  if(btn){btn.disabled=true;btn.textContent='불러오는 중...';}
+  try{
+    const {content:data,sha}=await ghRead(GH_ORDERS);
+    _ordersSHA=sha;
+    if(data&&data.length>0){
+      orders0=data;
+      rawWb0s={};
+      renderPreview0();show('preview0');
+      if(status)status.textContent=data.length+'건 불러옴';
+      toast('✅ 깃허브에서 미처리 발주 '+data.length+'건 불러옴');
+    }else{
+      if(status)status.textContent='저장된 미처리 발주 없음';
+      toast('깃허브에 저장된 미처리 발주가 없습니다.');
+    }
+  }catch(e){
+    if(status)status.textContent='연결 실패';
+    toast('❌ 깃허브 연결 실패: '+e.message);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='☁️ 깃허브에서 미처리 발주 불러오기';}
+  }
+}
+
+/* ======================================================
+   INIT — 앱 시작 시 정산 데이터만 자동 불러오기 (주문은 수동 로드)
+====================================================== */
+
+/* 공급처 정산 초기값 — 4월 지급완료 */
+(function initSupplierPays(){
+  const sp=localStorage.getItem(SUPPLIER_PAY_SK);
+  if(!sp||sp==='{}'){
+    const init={'2026-04':{paidAmount:1992000,paidDate:'2026-05-04',note:'4월 정산'}};
+    localStorage.setItem(SUPPLIER_PAY_SK,JSON.stringify(init));
+  }
+})();
+
+(async function init(){
+  // ── 1. 로컬 먼저 확인 — 비어있으면 SEED로 초기화 (버전 업그레이드 시) ──
+  const local=loadS();
+  if(local.length===0&&SEED.length>0){
+    localStorage.setItem(SK,JSON.stringify(SEED));
+    setSyncStatus('ok','초기 데이터 로드됨 ('+SEED.length+'건)');
+    renderSettle();
+    // 새 SEED를 구글시트에도 자동 저장
+    scheduleAutoSave(SEED); // 깃허브에 자동 저장
+    return;
+  }
+  // ── 2. 로컬 데이터 있으면 깃허브 동기화 시도 ──
+  setSyncStatus('spin','깃허브에서 불러오는 중...');
+  try{
+    const {content:ghSettle,sha}=await ghRead(GH_SETTLE);
+    _settleSHA=sha;
+    if(ghSettle&&ghSettle.length>0){
+      const ghData=ghSettle.map(r=>({...r,date:normDate(r.date)}));
+      const ghIds=new Set(ghData.map(r=>String(r.orderId)));
+      const localOnly=local.filter(r=>!ghIds.has(String(r.orderId)));
+      const merged=dedupByOrderId([...ghData,...localOnly]);
+      localStorage.setItem(SK,JSON.stringify(merged));
+      if(localOnly.length>0){
+        _settleSHA=await ghWrite(GH_SETTLE,merged,_settleSHA,'시작 병합 저장');
+      }
+      setSyncStatus('ok','깃허브 불러오기 완료 ('+merged.length+'건)');
+    }else{
+      setSyncStatus('ok','로컬 데이터 사용 ('+local.length+'건)');
+    }
+  }catch(e){
+    setSyncStatus('err','깃허브 연결 실패 — 로컬 데이터 사용');
+    console.warn('GitHub load failed:',e);
+  }
+  l
