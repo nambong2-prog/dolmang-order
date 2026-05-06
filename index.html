@@ -130,7 +130,7 @@ tr.editing td{background:#fffde7!important}
       <div class="filename" id="fname0"></div>
     </div>
     <div style="margin-top:12px">
-      <button class="btn btn-cloud" onclick="loadOrdersForTab0()" id="btnGasLoad0">☁️ 구글시트에서 미처리 발주 불러오기</button>
+      <button class="btn btn-cloud" onclick="loadOrdersForTab0()" id="btnGasLoad0">☁️ 깃허브에서 미처리 발주 불러오기</button>
       <span id="t0GasStatus" style="margin-left:10px;font-size:13px;color:#666"></span>
     </div>
   </div>
@@ -211,11 +211,11 @@ tr.editing td{background:#fffde7!important}
     </div>
     <div id="t1OrdOk" class="alert alert-success hidden">✅ 발주서탭 주문파일 로드됨 — 송장파일만 업로드하면 됩니다.</div>
     <div id="t1GasOk" class="alert alert-success hidden" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      ☁️ 구글시트 발주 불러옴: <b id="t1GasCount">0</b>건 — 송장파일만 업로드하면 됩니다.
+      ☁️ 깃허브 발주 불러옴: <b id="t1GasCount">0</b>건 — 송장파일만 업로드하면 됩니다.
       <button class="btn btn-sm btn-outline" onclick="clearGasOrders()" style="margin-left:4px">✕ 초기화</button>
     </div>
     <div id="t1GasBtnArea" class="hidden" style="margin-bottom:14px">
-      <div class="alert alert-warn" style="margin-bottom:10px">💡 발주서탭을 <b>다른 PC</b>에서 작업한 경우 — 구글시트 발주 불러오기로 DeliveryList 재업로드 없이 진행 가능합니다.</div>
+      <div class="alert alert-warn" style="margin-bottom:10px">💡 발주서탭을 <b>다른 PC</b>에서 작업한 경우 — 깃허브 발주 불러오기로 DeliveryList 재업로드 없이 진행 가능합니다.</div>
       <button class="btn btn-cloud" onclick="loadOrdersFromGitHub()" id="btnGasLoad">☁️ 깃허브에서 발주 불러오기</button>
     </div>
     <div id="t1OrdUpload">
@@ -913,7 +913,7 @@ function onFile0(inp){
     const dupCount=orders.length-newUnique.length;
     orders0=[...keepOthers,...samePlatform,...newUnique];
     renderPreview0();show('preview0');
-    scheduleOrdersSave();  // 구글시트에 주문 자동 저장
+    scheduleOrdersSave();  // 깃허브에 주문 자동 저장
     // 플랫폼별 합계 표시
     const summary=Object.entries(
       orders0.reduce((a,o)=>{a[o.platform]=(a[o.platform]||0)+1;return a;},{})
@@ -972,7 +972,7 @@ function addManualOrder(){
   orders0.push(order);
   renderPreview0();
   show('preview0');
-  scheduleOrdersSave();  // 구글시트에 주문 자동 저장
+  scheduleOrdersSave();  // 깃허브에 주문 자동 저장
   // 입력 초기화
   ['mName','mPhone','mZip','mAddr','mMsg','mPrice'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('mQty').value='1';
@@ -1026,7 +1026,7 @@ function refreshTab1UI(){
     }else{
       // GAS 불러오기: 원본 DeliveryList 없음 → 완전한 형식 위해 선택적 업로드 안내
       show('t1OrdUpload');
-      document.getElementById('t1OrdOk').textContent='☁️ 구글시트 발주 로드됨 — 아래에 원본 DeliveryList도 업로드하면 쿠팡 업로드 파일이 완전한 형식으로 생성됩니다. (없어도 진행 가능)';
+      document.getElementById('t1OrdOk').textContent='☁️ 깃허브 발주 로드됨 — 아래에 원본 DeliveryList도 업로드하면 쿠팡 업로드 파일이 완전한 형식으로 생성됩니다. (없어도 진행 가능)';
       document.getElementById('t1step').textContent='1';
     }
   }else if(hasGas){
@@ -1208,12 +1208,12 @@ function addToSettlement(){
   });
   saveS(data);
   if(added>0){
-    // 정산 추가된 주문 orders0에서 제거 + GAS 동기화
+    // 정산 추가된 주문 orders0에서 제거 + 깃허브 동기화
     const addedIds=new Set(orders1.filter(o=>o.trk&&!ids.has(String(o.orderId))).map(o=>String(o.orderId)));
     orders0=orders0.filter(o=>!addedIds.has(String(o.orderId)));
     if(orders0.length===0){rawWb0s={};hide('preview0');}
     else renderPreview0();
-    saveOrdersToGitHub();  // 즉시 GAS 동기화
+    saveOrdersToGitHub();  // 즉시 깃허브 동기화
     toast('✅ '+added+'건 정산 추가 완료, 발주목록에서 제거됨');
     switchTab(2);
   }else{
@@ -1724,7 +1724,7 @@ setupDrop('drop1b','file1b',onFile1b);
 setupDrop('dropHist','fileHist',onFileHist);
 
 /* ======================================================
-   TAB 0 — 구글시트에서 미처리 발주 수동 불러오기
+   TAB 0 — 깃허브에서 미처리 발주 수동 불러오기
 ====================================================== */
 async function loadOrdersForTab0(){
   const btn=document.getElementById('btnGasLoad0');
@@ -1771,7 +1771,7 @@ async function loadOrdersForTab0(){
     localStorage.setItem(SK,JSON.stringify(SEED));
     setSyncStatus('ok','초기 데이터 로드됨 ('+SEED.length+'건)');
     renderSettle();
-    // 새 SEED를 구글시트에도 자동 저장
+    // 새 SEED를 깃허브에도 자동 저장
     scheduleAutoSave(SEED); // 깃허브에 자동 저장
     return;
   }
