@@ -1785,4 +1785,11 @@ async function loadOrdersForTab0(){
     setSyncStatus('err','깃허브 연결 실패 — 로컬 데이터 사용');
     console.warn('GitHub load failed:',e);
   }
-  l
+  renderSupplyTiers();
+  buildMonthPicker();
+  setPeriod('thisMonth');
+  renderSettle();
+})();
+</script>
+</body>
+</html>
