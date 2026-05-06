@@ -111,6 +111,7 @@ tr.editing td{background:#fffde7!important}
   <span>소낭친환경 유기농 당근</span>
   <span class="gas-dot" id="gasDot"></span>
   <span class="gas-lbl" id="gasLbl"></span>
+  <button onclick="showTokenSettings()" style="margin-left:auto;background:none;border:1px solid rgba(255,255,255,0.4);color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px">⚙️ 설정</button>
 </header>
 <div class="tab-bar">
   <button class="tab-btn active" onclick="switchTab(0)">📦 발주서 생성</button>
@@ -497,14 +498,45 @@ const FEE_RT={'쿠팡':0.108,'스마트스토어':0.055,'발주방':0,'당근마
 const SENDER={name:'돌망돌망',zip:'',addr:'제주특별자치도 서귀포시 표선면 서성일로 89',phone:'010-2272-3645'};
 const SK='dolmang_settle_v4'; // 2026-05-04 supplierPaid 추가 (4월 정산완료 반영) // 2026-04-29 발주서 기준 정산 재구성 (130건)
 // ── GitHub Storage ──
-const GH_TOKEN='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';
+const TOKEN_SK='dolmang_gh_token';
+function getToken(){return localStorage.getItem(TOKEN_SK)||'';}
 const GH_USER='nambong2-prog';const GH_REPO='dolmang-order';
 const GH_API='https://api.github.com/repos/'+GH_USER+'/'+GH_REPO+'/contents/';
 const GH_SETTLE='settlement.json';const GH_ORDERS='orders.json';
 let _settleSHA=null;let _ordersSHA=null;
+
+// 토큰 설정 UI
+function showTokenSettings(){
+  document.getElementById('tokenInput').value=getToken();
+  document.getElementById('tokenStatus').textContent='';
+  const modal=document.getElementById('tokenModal');
+  modal.style.display='flex';
+  // 토큰 없으면 취소 버튼 숨김
+  document.getElementById('tokenCancelBtn').style.display=getToken()?'':'none';
+}
+function hideTokenModal(){document.getElementById('tokenModal').style.display='none';}
+async function saveTokenAndClose(){
+  const t=document.getElementById('tokenInput').value.trim();
+  if(!t){document.getElementById('tokenStatus').textContent='토큰을 입력해주세요.';return;}
+  if(!t.startsWith('ghp_')&&!t.startsWith('github_pat_')){
+    document.getElementById('tokenStatus').textContent='올바른 토큰 형식이 아닙니다.';return;
+  }
+  document.getElementById('tokenStatus').textContent='확인 중...';
+  // 토큰 유효성 검사
+  try{
+    const res=await fetch('https://api.github.com/repos/'+GH_USER+'/'+GH_REPO+'/contents/settlement.json',
+      {headers:{'Authorization':'token '+t,'Accept':'application/vnd.github.v3+json'}});
+    if(res.status===401){document.getElementById('tokenStatus').textContent='❌ 토큰이 유효하지 않습니다.';return;}
+    if(res.status===404){document.getElementById('tokenStatus').textContent='❌ 레포지토리에 접근할 수 없습니다.';return;}
+    localStorage.setItem(TOKEN_SK,t);
+    hideTokenModal();
+    toast('✅ 토큰 저장 완료! 데이터 불러오는 중...');
+    setTimeout(()=>location.reload(),800);
+  }catch(e){document.getElementById('tokenStatus').textContent='❌ 연결 실패: '+e.message;}
+}
 // GitHub 파일 읽기
 async function ghRead(path){
-  const res=await fetch(GH_API+path,{headers:{'Authorization':'token '+GH_TOKEN,'Accept':'application/vnd.github.v3+json'}});
+  const res=await fetch(GH_API+path,{headers:{'Authorization':'token '+getToken(),'Accept':'application/vnd.github.v3+json'}});
   if(res.status===404)return{content:null,sha:null};
   if(!res.ok)throw new Error('GitHub 읽기 실패: '+res.status);
   const d=await res.json();
@@ -520,14 +552,14 @@ async function ghWrite(path,data,sha,msg){
   const body={message:msg||'update '+path,content};
   if(sha)body.sha=sha;
   const res=await fetch(GH_API+path,{method:'PUT',
-    headers:{'Authorization':'token '+GH_TOKEN,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
+    headers:{'Authorization':'token '+getToken(),'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
     body:JSON.stringify(body)});
   // 409 충돌 → SHA 재조회 후 1회 재시도
   if(res.status===409){
     const r2=await ghRead(path);
     const body2={message:msg||'update '+path,content,sha:r2.sha};
     const res2=await fetch(GH_API+path,{method:'PUT',
-      headers:{'Authorization':'token '+GH_TOKEN,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
+      headers:{'Authorization':'token '+getToken(),'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
       body:JSON.stringify(body2)});
     if(!res2.ok)throw new Error('GitHub 저장 실패(재시도): '+res2.status);
     const d2=await res2.json();return d2.content.sha;
@@ -1775,6 +1807,8 @@ async function loadOrdersForTab0(){
 })();
 
 (async function init(){
+  // ── 0. 토큰 없으면 설정창 표시 ──
+  if(!getToken()){showTokenSettings();return;}
   // ── 1. 로컬 먼저 확인 — 비어있으면 SEED로 초기화 (버전 업그레이드 시) ──
   const local=loadS();
   if(local.length===0&&SEED.length>0){
@@ -1813,5 +1847,20 @@ async function loadOrdersForTab0(){
   renderSettle();
 })();
 </script>
+
+<!-- 토큰 설정 모달 -->
+<div id="tokenModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:12px;padding:28px;width:90%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,0.3)">
+    <h3 style="margin-bottom:8px;font-size:18px">⚙️ 깃허브 연결 설정</h3>
+    <p style="color:#666;font-size:13px;margin-bottom:16px">GitHub Personal Access Token을 입력하세요.<br>한 번 저장하면 이 기기에서 자동으로 사용됩니다.</p>
+    <input id="tokenInput" type="password" placeholder="ghp_xxxxxxxxxx..."
+      style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:12px;box-sizing:border-box">
+    <div style="display:flex;gap:8px">
+      <button onclick="saveTokenAndClose()" style="flex:1;padding:10px;background:#ff6b35;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">저장</button>
+      <button onclick="hideTokenModal()" id="tokenCancelBtn" style="padding:10px 16px;background:#f0f0f0;border:none;border-radius:8px;cursor:pointer;font-size:14px">취소</button>
+    </div>
+    <p id="tokenStatus" style="color:#e74c3c;font-size:12px;margin-top:8px;min-height:16px"></p>
+  </div>
+</div>
 </body>
 </html>
