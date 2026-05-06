@@ -353,12 +353,24 @@ tr.editing td{background:#fffde7!important}
   </div>
   <div id="settleTableCard" class="card">
     <h2>📋 정산 내역 <span style="color:#888;font-size:13px;font-weight:400">— ✏️ 수정 가능 | <span id="filterTag" class="filter-tag hidden">필터 적용 중</span></span></h2>
-    <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+    <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
+      <button id="fpBtn3" class="btn btn-sm btn-outline" style="border-radius:20px" onclick="setPeriod('today')">오늘</button>
       <button id="fpBtn0" class="btn btn-sm" style="background:#ff6b35;color:white;border-radius:20px" onclick="setPeriod('thisMonth')">이번달</button>
       <button id="fpBtn1" class="btn btn-sm btn-outline" style="border-radius:20px" onclick="setPeriod('lastMonth')">지난달</button>
       <button id="fpBtn2" class="btn btn-sm btn-outline" style="border-radius:20px" onclick="setPeriod('all')">전체</button>
       <select id="fpMonthSel" class="filter-select" style="display:none;border-radius:20px" onchange="setPeriod('pick')">
       </select>
+    </div>
+    <div id="periodSummary" style="display:flex;gap:12px;align-items:center;background:#fff8f5;border:1px solid #ffe0d0;border-radius:10px;padding:8px 14px;margin-bottom:8px;font-size:13px;flex-wrap:wrap">
+      <span style="color:#ff6b35;font-weight:700" id="psSummaryLabel">이번달</span>
+      <span>📦 <b id="psCount">0</b>건</span>
+      <span style="color:#888">|</span>
+      <span>2kg <b id="ps2kg">0</b>개</span>
+      <span>3kg <b id="ps3kg">0</b>개</span>
+      <span>5kg <b id="ps5kg">0</b>개</span>
+      <span style="color:#888">|</span>
+      <span>매출 <b id="psSales">0</b>원</span>
+      <span>순이익 <b id="psProfit">0</b>원</span>
     </div>
     <div class="filter-bar">
       <label>🔍 구매자</label>
@@ -1400,20 +1412,24 @@ function setPeriod(p){
   const thisM=today.slice(0,7);
   const lastM=(()=>{const d=new Date(today);d.setMonth(d.getMonth()-1);return d.toISOString().slice(0,7);})();
   const sel=document.getElementById('fpMonthSel');
-  // 버튼 스타일 토글
-  const btns=['fpBtn0','fpBtn1','fpBtn2'];
-  const activeIdx=p==='thisMonth'?0:p==='lastMonth'?1:p==='all'?2:-1;
-  btns.forEach((id,i)=>{
+  // 버튼 스타일 토글 (오늘=fpBtn3, 이번달=fpBtn0, 지난달=fpBtn1, 전체=fpBtn2)
+  const btnMap={today:'fpBtn3',thisMonth:'fpBtn0',lastMonth:'fpBtn1',all:'fpBtn2'};
+  ['fpBtn3','fpBtn0','fpBtn1','fpBtn2'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
-    el.style.background=i===activeIdx?'#ff6b35':'';
-    el.style.color=i===activeIdx?'white':'';
-    el.className=i===activeIdx?'btn btn-sm':'btn btn-sm btn-outline';
+    const active=(btnMap[p]===id);
+    el.style.background=active?'#ff6b35':'';
+    el.style.color=active?'white':'';
+    el.className=active?'btn btn-sm':'btn btn-sm btn-outline';
     el.style.borderRadius='20px';
   });
   // 날짜 필드 자동 설정
   const fFrom=document.getElementById('fFrom');
   const fTo=document.getElementById('fTo');
-  if(p==='thisMonth'){
+  if(p==='today'){
+    if(fFrom)fFrom.value=today;
+    if(fTo)fTo.value=today;
+    if(sel)sel.style.display='none';
+  } else if(p==='thisMonth'){
     if(fFrom)fFrom.value=thisM+'-01';
     if(fTo)fTo.value=today;
     if(sel)sel.style.display='none';
@@ -1432,6 +1448,30 @@ function setPeriod(p){
     if(fTo&&mv){const e=new Date(new Date(mv+'-01').getFullYear(),new Date(mv+'-01').getMonth()+1,0);fTo.value=e.toISOString().slice(0,10);}
   }
   renderSettle();
+}
+function updatePeriodSummary(){
+  const data=getFilteredData();
+  let c2=0,c3=0,c5=0,sales=0,profit=0;
+  data.forEach(r=>{
+    const sz=extractSize(r.option);
+    if(sz==='2kg')c2+=r.qty;else if(sz==='3kg')c3+=r.qty;else if(sz==='5kg')c5+=r.qty;
+    sales+=r.salePrice;profit+=r.profit;
+  });
+  const labelMap={today:'오늘',thisMonth:'이번달',lastMonth:'지난달',all:'전체',pick:'선택월'};
+  const lbl=document.getElementById('psSummaryLabel');
+  const cnt=document.getElementById('psCount');
+  const p2=document.getElementById('ps2kg');
+  const p3=document.getElementById('ps3kg');
+  const p5=document.getElementById('ps5kg');
+  const pS=document.getElementById('psSales');
+  const pP=document.getElementById('psProfit');
+  if(lbl)lbl.textContent=labelMap[_activePeriod]||'';
+  if(cnt)cnt.textContent=data.length;
+  if(p2)p2.textContent=c2;
+  if(p3)p3.textContent=c3;
+  if(p5)p5.textContent=c5;
+  if(pS)pS.textContent=comma(sales);
+  if(pP){pP.textContent=comma(profit);pP.style.color=profit>=0?'#27ae60':'#e74c3c';}
 }
 
 function buildMonthPicker(){
@@ -1585,6 +1625,7 @@ function switchSummaryView(v){
 
 function renderSettle(){
   renderSupplierSettle();
+  updatePeriodSummary();
   const all=loadS();           // 전체 데이터 — 요약/월별에 사용
   const filtered=getFilteredData(); // 기간필터 적용 — 테이블에만 사용
 
