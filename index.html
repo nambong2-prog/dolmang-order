@@ -192,11 +192,17 @@ tr.editing td{background:#fffde7!important}
         <button class="btn btn-primary" onclick="downloadBaljoo()">📋 발주서 생성 (.xlsx)</button>
         <button class="btn btn-outline" onclick="clearOrders0()" style="margin-left:8px">✕ 초기화</button>
       </div>
-      <div class="tbl-wrap">
-        <table>
-          <thead><tr><th>제외</th><th>#</th><th>채널</th><th>받는사람</th><th>전화번호</th><th>옵션</th><th>수량</th><th>주소</th><th>배송메시지</th><th>주문번호</th></tr></thead>
-          <tbody id="tbody0"></tbody>
-        </table>
+      <div onclick="toggleTbl('tbl0','arrow0')" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 4px;margin-top:4px;border-top:1px solid #eee;color:#666;font-size:13px;user-select:none">
+        <span id="arrow0" style="font-size:11px;transition:transform .2s">▶</span>
+        <span id="tbl0Label">주문 내역 보기</span>
+      </div>
+      <div id="tbl0" style="display:none">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>제외</th><th>#</th><th>채널</th><th>받는사람</th><th>전화번호</th><th>옵션</th><th>수량</th><th>주소</th><th>배송메시지</th><th>주문번호</th></tr></thead>
+            <tbody id="tbody0"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -260,11 +266,17 @@ tr.editing td{background:#fffde7!important}
           💡 정산 추가는 <b>정산현황 탭 → 소낭 파일 업로드</b>로만 가능합니다
         </div>
       <div id="missAlert1" class="hidden alert alert-warn" style="margin-top:10px"></div>
-      <div class="tbl-wrap">
-        <table>
-          <thead><tr><th>#</th><th>받는사람</th><th>옵션</th><th>수량</th><th>매칭</th><th>택배사</th><th>운송장번호</th></tr></thead>
-          <tbody id="tbody1"></tbody>
-        </table>
+      <div onclick="toggleTbl('tbl1','arrow1')" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 4px;margin-top:4px;border-top:1px solid #eee;color:#666;font-size:13px;user-select:none">
+        <span id="arrow1" style="font-size:11px;transition:transform .2s">▶</span>
+        <span id="tbl1Label">처리 내역 보기</span>
+      </div>
+      <div id="tbl1" style="display:none">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>#</th><th>받는사람</th><th>옵션</th><th>수량</th><th>매칭</th><th>택배사</th><th>운송장번호</th></tr></thead>
+            <tbody id="tbody1"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -995,6 +1007,15 @@ function onFile0(inp){
     toast('✅ '+platform+' 신규 '+newUnique.length+'건 추가'+dupMsg+' → 전체 '+orders0.length+'건 ('+summary+')');
   }).catch(e=>{toast('❌ 오류: '+e.message);console.error(e);});
 }
+function updateTblLabel(id){
+  const el=document.getElementById(id);
+  const label=document.getElementById(id+'Label');
+  if(!el||!label)return;
+  const count=el.querySelectorAll('tbody tr').length;
+  const isOpen=el.style.display!=='none';
+  const base=id==='tbl0'?'주문 내역':'처리 내역';
+  label.textContent=isOpen?base+' 숨기기 ('+count+'건)':base+' 보기 ('+count+'건)';
+}
 function renderPreview0(){
   let c2=0,c3=0,c5=0;
   orders0.forEach(o=>{const s=extractSize(o.option);if(s==='2kg')c2+=o.qty;else if(s==='3kg')c3+=o.qty;else if(s==='5kg')c5+=o.qty;});
@@ -1017,6 +1038,7 @@ function renderPreview0(){
       <td style="font-size:11px;color:#bbb">${o.orderId}</td>`;
     tbody.appendChild(tr);
   });
+  updateTblLabel('tbl0');
 }
 
 function addManualOrder(){
@@ -1159,7 +1181,7 @@ function runTracking(){
     });
     const me=document.getElementById('missAlert1');
     if(miss.length>0){me.textContent='⚠️ 미매칭 '+miss.length+'건: '+miss.join(', ');show('missAlert1');}else hide('missAlert1');
-    show('result1');toast('✅ '+matched+'/'+src.length+'건 매칭 완료');
+    show('result1');updateTblLabel('tbl1');toast('✅ '+matched+'/'+src.length+'건 매칭 완료');
   }).catch(e=>{toast('❌ 오류: '+e.message);console.error(e);});
 }
 const DL_HEADER=['번호','묶음배송번호','주문번호','택배사','운송장번호','분리배송 Y/N','분리배송 출고예정일','주문시 출고예정일','출고일(발송일)','주문일','등록상품명','등록옵션명','노출상품명(옵션명)','노출상품ID','옵션ID','최초등록등록상품명/옵션명','업체상품코드','바코드','결제액','배송비구분','배송비','도서산간 추가배송비','구매수(수량)','옵션판매가(판매단가)','구매자','구매자전화번호','수취인이름','수취인전화번호','우편번호','수취인 주소','배송메세지','상품별 추가메시지','주문자 추가메시지','배송완료일','구매확정일자','개인통관번호(PCCC)','통관용수취인전화번호','기타','결제위치','배송유형'];
@@ -1734,6 +1756,19 @@ function confirmEdit(oid){
     salePrice:sale,costPrice:cost,commission:fee,profit,
     margin:parseFloat(margin.toFixed(1)),trackNum:g('trk').value};
   saveS(data);renderSettle();toast('✅ 수정 완료');
+}
+function toggleTbl(id,arrowId){
+  const el=document.getElementById(id);
+  const arrow=document.getElementById(arrowId);
+  const label=document.getElementById(id+'Label');
+  const isOpen=el.style.display!=='none';
+  el.style.display=isOpen?'none':'';
+  if(arrow)arrow.textContent=isOpen?'▶':'▼';
+  if(label){
+    const count=el.querySelectorAll('tbody tr').length;
+    label.textContent=isOpen?id==='tbl0'?'주문 내역 보기':'처리 내역 보기'
+                             :(id==='tbl0'?'주문 내역 숨기기 ('+count+'건)':'처리 내역 숨기기 ('+count+'건)');
+  }
 }
 function toggleAllCheck(cb){
   document.querySelectorAll('.row-chk').forEach(c=>c.checked=cb.checked);
