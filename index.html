@@ -1695,7 +1695,12 @@ function renderSettle(){
     if(isMulti) tr.style.cssText='background:linear-gradient(90deg,#fff8e1 0%,#fff 60%);border-left:3px solid #f59e0b';
     const qtyCell=isMulti?`<td><span style="background:#f59e0b;color:#fff;font-weight:700;padding:1px 7px;border-radius:10px;font-size:12px">${r.qty}</span></td>`:`<td>${r.qty}</td>`;
     tr.innerHTML=`<td>${i+1}</td><td>${esc(normDate(r.date))}</td><td>${esc(r.name)}</td>
-      <td><span class="badge ${r.platform==='쿠팡'?'badge-cp':r.platform==='발주방'?'badge-bj':'badge-ss'}">${esc(r.platform)}</span></td>
+      <td><select class="edit-input" id="ei_platform" style="width:100px">
+      <option value="쿠팡" ${r.platform==='쿠팡'?'selected':''}>쿠팡</option>
+      <option value="스마트스토어" ${r.platform==='스마트스토어'?'selected':''}>스마트스토어</option>
+      <option value="발주방" ${r.platform==='발주방'?'selected':''}>발주방</option>
+      <option value="당근마켓" ${r.platform==='당근마켓'?'selected':''}>당근마켓</option>
+    </select></td>
       <td>${esc(extractSize(r.option)||r.option)}</td>${qtyCell}
       <td>${comma(r.salePrice)}원</td><td>${comma(r.costPrice)}원</td><td>${comma(r.commission)}원</td>
       <td class="${pc}">${comma(r.profit)}원</td><td>${safeMargin(r.margin)}</td>
@@ -1714,7 +1719,12 @@ function editSettle(oid){
   tr.innerHTML=`<td>✏️</td>
     <td><input class="edit-input" id="ei_date" value="${esc(normDate(r.date))}" style="width:100px"></td>
     <td><input class="edit-input" id="ei_name" value="${esc(r.name)}"></td>
-    <td><span class="badge ${r.platform==='쿠팡'?'badge-cp':r.platform==='발주방'?'badge-bj':'badge-ss'}">${esc(r.platform)}</span></td>
+    <td><select class="edit-input" id="ei_platform" style="width:100px">
+      <option value="쿠팡" ${r.platform==='쿠팡'?'selected':''}>쿠팡</option>
+      <option value="스마트스토어" ${r.platform==='스마트스토어'?'selected':''}>스마트스토어</option>
+      <option value="발주방" ${r.platform==='발주방'?'selected':''}>발주방</option>
+      <option value="당근마켓" ${r.platform==='당근마켓'?'selected':''}>당근마켓</option>
+    </select></td>
     <td><input class="edit-input" id="ei_opt" value="${esc(r.option)}" style="width:65px"></td>
     <td><input class="edit-input" id="ei_qty" value="${r.qty}" type="number" style="width:44px"></td>
     <td><input class="edit-input" id="ei_sale" value="${r.salePrice}" type="number" style="width:72px"></td>
@@ -1736,8 +1746,9 @@ function confirmEdit(oid){
   const fee=Number(g('fee').value)||r.commission;
   const profit=sale-cost-fee;
   const margin=sale>0?profit/sale*100:0;
+  const pl=g('platform')?g('platform').value:r.platform;
   data[idx]={...r,date:g('date').value||r.date,name:g('name').value||r.name,
-    option:g('opt').value||r.option,qty:Number(g('qty').value)||r.qty,
+    platform:pl,option:g('opt').value||r.option,qty:Number(g('qty').value)||r.qty,
     salePrice:sale,costPrice:cost,commission:fee,profit,
     margin:parseFloat(margin.toFixed(1)),trackNum:g('trk').value};
   saveS(data);renderSettle();toast('✅ 수정 완료');
