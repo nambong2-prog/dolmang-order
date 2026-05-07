@@ -223,6 +223,20 @@ tr.editing td{background:#fffde7!important}
       ☁️ 깃허브 발주 불러옴: <b id="t1GasCount">0</b>건 — 송장파일만 업로드하면 됩니다.
       <button class="btn btn-sm btn-outline" onclick="clearGasOrders()" style="margin-left:4px">✕ 초기화</button>
     </div>
+    <div id="gasPreview1" class="hidden" style="margin-bottom:12px">
+      <div onclick="toggleTbl('tblGas1','arrowGas1')" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 4px;border-top:1px solid #eee;color:#666;font-size:13px;user-select:none">
+        <span id="arrowGas1" style="font-size:11px">▶</span>
+        <span id="tblGas1Label">불러온 발주 내역 보기</span>
+      </div>
+      <div id="tblGas1" style="display:none">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>#</th><th>채널</th><th>받는사람</th><th>옵션</th><th>수량</th><th>전화번호</th></tr></thead>
+            <tbody id="tbodyGas1"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
     <div id="t1GasBtnArea" class="hidden" style="margin-bottom:14px">
       <div class="alert alert-warn" style="margin-bottom:10px">💡 발주서탭을 <b>다른 PC</b>에서 작업한 경우 — 깃허브 발주 불러오기로 DeliveryList 재업로드 없이 진행 가능합니다.</div>
       <button class="btn btn-cloud" onclick="loadOrdersFromGitHub()" id="btnGasLoad">☁️ 깃허브에서 발주 불러오기</button>
@@ -774,6 +788,7 @@ async function loadOrdersFromGitHub(){
       });
       document.getElementById('t1GasCount').textContent=data.length;
       show('t1GasOk');hide('t1GasBtnArea');
+      renderGasPreview1();
       refreshTab1UI();
       toast('✅ 깃허브에서 '+data.length+'건 발주 불러옴');
     }else{
@@ -788,7 +803,8 @@ async function loadOrdersFromGitHub(){
 
 function clearGasOrders(){
   gasLoadedOrders=[];
-  hide('t1GasOk');
+  hide('t1GasOk');hide('gasPreview1');
+  document.getElementById('tbodyGas1').innerHTML='';
   if(orders0.length===0){show('t1GasBtnArea');show('t1OrdUpload');}
   refreshTab1UI();
   toast('발주 초기화됨');
@@ -1756,6 +1772,27 @@ function confirmEdit(oid){
     salePrice:sale,costPrice:cost,commission:fee,profit,
     margin:parseFloat(margin.toFixed(1)),trackNum:g('trk').value};
   saveS(data);renderSettle();toast('✅ 수정 완료');
+}
+function renderGasPreview1(){
+  const src=gasLoadedOrders;
+  if(!src||!src.length){hide('gasPreview1');return;}
+  const tbody=document.getElementById('tbodyGas1');
+  tbody.innerHTML='';
+  const plColor={'쿠팡':'#e8001c','스마트스토어':'#03c75a','발주방':'#1a73e8','당근마켓':'#f59e0b'};
+  src.forEach((o,i)=>{
+    const pc=plColor[o.platform]||'#888';
+    const badge=`<span style="background:${pc};color:${o.platform==='당근마켓'?'#333':'#fff'};font-size:10px;padding:1px 5px;border-radius:3px">${o.platform||'-'}</span>`;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${i+1}</td><td>${badge}</td><td>${esc(o.name||'')}</td><td>${esc(extractSize(o.option)||o.option||'')}</td><td>${o.qty||1}</td><td>${fmtPhone(o.phone||'')}</td>`;
+    tbody.appendChild(tr);
+  });
+  show('gasPreview1');
+  // 라벨 업데이트
+  const label=document.getElementById('tblGas1Label');
+  if(label) label.textContent='불러온 발주 내역 보기 ('+src.length+'건)';
+  // tblGas1 닫힌 상태로 초기화
+  document.getElementById('tblGas1').style.display='none';
+  document.getElementById('arrowGas1').textContent='▶';
 }
 function toggleTbl(id,arrowId){
   const el=document.getElementById(id);
