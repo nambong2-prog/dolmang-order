@@ -7,40 +7,42 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#f5f5f5;color:#333}
-header{background:linear-gradient(135deg,#ff6b35,#e55a2b);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:10px}
+header{background:linear-gradient(135deg,#ff6b35,#e55a2b);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 header h1{font-size:17px;font-weight:700}
-header span{font-size:12px;opacity:.8}
-.container{max-width:1000px;margin:0 auto;padding:16px}
-.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
-.sbox{background:#fff;border-radius:10px;padding:14px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.sbox .val{font-size:20px;font-weight:700;color:#ff6b35}
-.sbox .lbl{font-size:11px;color:#888;margin-top:4px}
-.filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
-.btn{padding:6px 14px;border-radius:20px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px}
+header span{font-size:12px;opacity:.8;margin-left:auto}
+.container{max-width:1060px;margin:0 auto;padding:16px}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.sbox{background:#fff;border-radius:10px;padding:12px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.sbox .val{font-size:18px;font-weight:700;color:#ff6b35}
+.sbox .lbl{font-size:11px;color:#888;margin-top:3px}
+.filters{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.btn{padding:5px 14px;border-radius:20px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px;transition:.15s}
 .btn.active{background:#ff6b35;color:#fff;border-color:#ff6b35}
+.btn:hover:not(.active){background:#fff0eb;border-color:#ff6b35}
+select.month-sel{padding:5px 10px;border-radius:20px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;color:#333}
+.period-bar{background:#fff8f5;border:1px solid #ffe0d0;border-radius:10px;padding:9px 14px;margin-bottom:10px;font-size:13px;display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.period-bar b{color:#ff6b35}
 .card{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden}
-.tbl-wrap{overflow-x:auto}
+.tbl-wrap{overflow-x:auto;max-height:60vh;overflow-y:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{background:#fff8f5;padding:9px 10px;text-align:left;font-weight:600;border-bottom:2px solid #ffe0d0;white-space:nowrap}
-td{padding:8px 10px;border-bottom:1px solid #f0f0f0;white-space:nowrap}
+th{background:#fff8f5;padding:9px 10px;text-align:left;font-weight:600;border-bottom:2px solid #ffe0d0;white-space:nowrap;position:sticky;top:0;z-index:1}
+td{padding:7px 10px;border-bottom:1px solid #f0f0f0;white-space:nowrap}
 tr:hover td{background:#fff8f5}
-.platform{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
-.p-coupang{background:#e8f4fd;color:#1a6fc4}
-.p-smart{background:#e8fde8;color:#1a7c1a}
-.p-baljoo{background:#fef3e8;color:#c47a1a}
-.p-other{background:#f3e8fe;color:#7a1ac4}
-.profit-pos{color:#27ae60;font-weight:600}
-.profit-neg{color:#e74c3c;font-weight:600}
-.loading{text-align:center;padding:40px;color:#888}
-.period-summary{background:#fff8f5;border:1px solid #ffe0d0;border-radius:10px;padding:10px 16px;margin-bottom:12px;font-size:13px;display:flex;gap:16px;flex-wrap:wrap;align-items:center}
-.period-summary b{color:#ff6b35}
-.updated{font-size:11px;color:#aaa;margin-left:auto}
+.pl{display:inline-block;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:600}
+.pc{background:#e8f4fd;color:#1a6fc4}
+.ps{background:#e8fde8;color:#1a7c1a}
+.pb{background:#fef3e8;color:#c47a1a}
+.po{background:#f3e8fe;color:#7a1ac4}
+.pp{color:#27ae60;font-weight:600}
+.pn{color:#e74c3c;font-weight:600}
+.loading{text-align:center;padding:50px;color:#888;font-size:15px}
+.total-row td{background:#fff0eb;font-weight:700;border-top:2px solid #ffd0b0}
 </style>
 </head>
 <body>
 <header>
   <h1>🥕 돌망돌망 정산 현황</h1>
-  <span id="lastUpdated"></span>
+  <span id="hdrInfo">로딩 중...</span>
 </header>
 <div class="container">
   <div id="loading" class="loading">📡 데이터 불러오는 중...</div>
@@ -51,8 +53,11 @@ tr:hover td{background:#fff8f5}
       <button class="btn active" onclick="setP('thisMonth')">이번달</button>
       <button class="btn" onclick="setP('lastMonth')">지난달</button>
       <button class="btn" onclick="setP('all')">전체</button>
+      <select class="month-sel" id="monthSel" onchange="setP('pick',this.value)">
+        <option value="">📅 월 선택</option>
+      </select>
     </div>
-    <div class="period-summary" id="periodSummary"></div>
+    <div class="period-bar" id="periodBar"></div>
     <div class="card">
       <div class="tbl-wrap">
         <table>
@@ -71,17 +76,23 @@ tr:hover td{background:#fff8f5}
 const RAW='https://raw.githubusercontent.com/nambong2-prog/dolmang-order/main/settlement.json';
 let allData=[];
 let activePeriod='thisMonth';
-
+let activePick='';
 const comma=n=>Math.round(n).toLocaleString('ko-KR');
 const todayYMD=()=>new Date(Date.now()+9*3600000).toISOString().slice(0,10);
+
+// 마진율 계산 — 저장값이 날짜 문자열 등 오류인 경우 salePrice/profit으로 재계산
+function calcMargin(r){
+  const m=Number(r.margin);
+  if(isFinite(m)&&m>=0&&m<=100)return m;
+  // 재계산
+  const s=Number(r.salePrice)||0,p=Number(r.profit)||0;
+  return s>0?parseFloat((p/s*100).toFixed(1)):0;
+}
 
 function dedupByOrderId(arr){const m=new Map();arr.forEach(r=>m.set(String(r.orderId),r));return[...m.values()];}
 
 function getPlatformClass(p){
-  if(p==='쿠팡')return'p-coupang';
-  if(p==='스마트스토어')return'p-smart';
-  if(p==='발주방')return'p-baljoo';
-  return'p-other';
+  return p==='쿠팡'?'pc':p==='스마트스토어'?'ps':p==='발주방'?'pb':'po';
 }
 
 function getFiltered(){
@@ -89,73 +100,94 @@ function getFiltered(){
   const thisM=today.slice(0,7);
   const lastM=(()=>{const d=new Date(today);d.setMonth(d.getMonth()-1);return d.toISOString().slice(0,7);})();
   return allData.filter(r=>{
-    const d=r.date||'';
+    const d=(r.date||'').slice(0,10);
     if(activePeriod==='today')return d===today;
     if(activePeriod==='thisMonth')return d.startsWith(thisM);
     if(activePeriod==='lastMonth')return d.startsWith(lastM);
+    if(activePeriod==='pick')return d.startsWith(activePick);
     return true;
   });
 }
 
-function setP(p){
+function setP(p,pickVal){
   activePeriod=p;
+  if(p==='pick')activePick=pickVal||'';
+  // 버튼 스타일
+  const labelMap={today:'오늘',thisMonth:'이번달',lastMonth:'지난달',all:'전체'};
   document.querySelectorAll('.filters .btn').forEach(b=>{
-    b.classList.toggle('active',b.textContent==={today:'오늘',thisMonth:'이번달',lastMonth:'지난달',all:'전체'}[p]);
+    b.classList.toggle('active',labelMap[p]===b.textContent);
   });
+  if(p!=='pick')document.getElementById('monthSel').value='';
   render();
 }
 
 function render(){
-  const data=getFiltered().sort((a,b)=>b.date>a.date?1:b.date<a.date?-1:0);
-  // 기간 요약
-  let c2=0,c3=0,c5=0,sales=0,profit=0;
+  const data=getFiltered().sort((a,b)=>(b.date||'')>(a.date||'')?1:(b.date||'')<(a.date||'')?-1:0);
+  let c2=0,c3=0,c5=0,sales=0,cost=0,fee=0,profit=0;
   data.forEach(r=>{
     const sz=r.option||'';
-    if(sz.includes('2'))c2+=Number(r.qty)||1;
-    else if(sz.includes('3'))c3+=Number(r.qty)||1;
-    else if(sz.includes('5'))c5+=Number(r.qty)||1;
+    const qty=Number(r.qty)||1;
+    if(sz.includes('2'))c2+=qty;else if(sz.includes('3'))c3+=qty;else if(sz.includes('5'))c5+=qty;
     sales+=Number(r.salePrice)||0;
+    cost+=Number(r.costPrice)||0;
+    fee+=Number(r.commission)||0;
     profit+=Number(r.profit)||0;
   });
-  const labelMap={today:'오늘',thisMonth:'이번달',lastMonth:'지난달',all:'전체'};
-  document.getElementById('periodSummary').innerHTML=
-    `<b>${labelMap[activePeriod]}</b> &nbsp;`+
-    `📦 <b>${data.length}</b>건 &nbsp;`+
-    `2kg <b>${c2}</b>개 &nbsp; 3kg <b>${c3}</b>개 &nbsp; 5kg <b>${c5}</b>개 &nbsp;`+
-    `매출 <b>${comma(sales)}</b>원 &nbsp;`+
-    `<span class="${profit>=0?'profit-pos':'profit-neg'}">순이익 <b>${comma(profit)}</b>원</span>`;
+  const labelMap={today:'오늘',thisMonth:'이번달',lastMonth:'지난달',all:'전체',pick:activePick||'선택월'};
+  document.getElementById('periodBar').innerHTML=
+    `<b>${labelMap[activePeriod]}</b>`+
+    `&nbsp;📦 <b>${data.length}</b>건`+
+    `&nbsp;&nbsp;2kg <b>${c2}</b>개&nbsp;3kg <b>${c3}</b>개&nbsp;5kg <b>${c5}</b>개`+
+    `&nbsp;&nbsp;매출 <b>${comma(sales)}</b>원`+
+    `&nbsp;&nbsp;<span class="${profit>=0?'pp':'pn'}">순이익 <b>${comma(profit)}</b>원</span>`;
 
-  // 테이블
   const tbody=document.getElementById('tbody');
-  if(!data.length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:30px;color:#aaa">데이터가 없습니다</td></tr>';return;}
-  tbody.innerHTML=data.map((r,i)=>`<tr>
-    <td style="color:#aaa">${i+1}</td>
-    <td>${r.date||'-'}</td>
-    <td>${r.name||'-'}</td>
-    <td><span class="platform ${getPlatformClass(r.platform)}">${r.platform||'-'}</span></td>
-    <td>${r.option||'-'}</td>
-    <td style="text-align:center">${r.qty||1}</td>
-    <td>${comma(r.salePrice||0)}</td>
-    <td>${comma(r.costPrice||0)}</td>
-    <td>${comma(r.commission||0)}</td>
-    <td class="${(r.profit||0)>=0?'profit-pos':'profit-neg'}">${comma(r.profit||0)}</td>
-    <td>${isFinite(Number(r.margin))?Number(r.margin).toFixed(1)+'%':'-'}</td>
-  </tr>`).join('');
+  if(!data.length){
+    tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:30px;color:#aaa">데이터가 없습니다</td></tr>';
+    return;
+  }
+  const rows=data.map((r,i)=>{
+    const margin=calcMargin(r);
+    const pft=Number(r.profit)||0;
+    return`<tr>
+      <td style="color:#aaa">${i+1}</td>
+      <td>${(r.date||'-').slice(0,10)}</td>
+      <td>${r.name||'-'}</td>
+      <td><span class="pl ${getPlatformClass(r.platform)}">${r.platform||'-'}</span></td>
+      <td>${r.option||'-'}</td>
+      <td style="text-align:center">${r.qty||1}</td>
+      <td>${comma(r.salePrice||0)}</td>
+      <td>${comma(r.costPrice||0)}</td>
+      <td>${comma(r.commission||0)}</td>
+      <td class="${pft>=0?'pp':'pn'}">${comma(pft)}</td>
+      <td>${margin.toFixed(1)}%</td>
+    </tr>`;
+  });
+  // 합계 행
+  const tM=sales>0?profit/sales*100:0;
+  rows.push(`<tr class="total-row">
+    <td colspan="5">합계</td>
+    <td style="text-align:center">${c2+c3+c5}</td>
+    <td>${comma(sales)}</td>
+    <td>${comma(cost)}</td>
+    <td>${comma(fee)}</td>
+    <td class="${profit>=0?'pp':'pn'}">${comma(profit)}</td>
+    <td>${tM.toFixed(1)}%</td>
+  </tr>`);
+  tbody.innerHTML=rows.join('');
 }
 
-function renderSummary(){
-  const tS=allData.reduce((s,r)=>s+(r.salePrice||0),0);
-  const tP=allData.reduce((s,r)=>s+(r.profit||0),0);
+function renderSummary(data){
+  const tS=data.reduce((s,r)=>s+(Number(r.salePrice)||0),0);
+  const tP=data.reduce((s,r)=>s+(Number(r.profit)||0),0);
   const tM=tS>0?tP/tS*100:0;
   let c2=0,c3=0,c5=0;
-  allData.forEach(r=>{
-    const sz=r.option||'';
-    if(sz.includes('2'))c2+=Number(r.qty)||1;
-    else if(sz.includes('3'))c3+=Number(r.qty)||1;
-    else if(sz.includes('5'))c5+=Number(r.qty)||1;
+  data.forEach(r=>{
+    const sz=r.option||'',qty=Number(r.qty)||1;
+    if(sz.includes('2'))c2+=qty;else if(sz.includes('3'))c3+=qty;else if(sz.includes('5'))c5+=qty;
   });
   document.getElementById('summaryGrid').innerHTML=[
-    {val:allData.length+'건',lbl:'전체 정산'},
+    {val:data.length+'건',lbl:'전체 정산'},
     {val:comma(tS)+'원',lbl:'총 매출'},
     {val:comma(tP)+'원',lbl:'총 순이익'},
     {val:tM.toFixed(1)+'%',lbl:'평균 마진율'},
@@ -165,15 +197,22 @@ function renderSummary(){
   ].map(({val,lbl})=>`<div class="sbox"><div class="val">${val}</div><div class="lbl">${lbl}</div></div>`).join('');
 }
 
-// 데이터 로드
+function buildMonthPicker(data){
+  const months=[...new Set(data.map(r=>(r.date||'').slice(0,7)).filter(Boolean))].sort().reverse();
+  const sel=document.getElementById('monthSel');
+  sel.innerHTML='<option value="">📅 월 선택</option>'+
+    months.map(m=>`<option value="${m}">${m.replace('-','년 ')}월</option>`).join('');
+}
+
 fetch(RAW+'?t='+Date.now())
   .then(r=>r.json())
-  .then(data=>{
-    allData=dedupByOrderId(data.map(r=>({...r,date:(r.date||'').slice(0,10)})));
+  .then(raw=>{
+    allData=dedupByOrderId(raw.map(r=>({...r,date:(r.date||'').slice(0,10)})));
     document.getElementById('loading').style.display='none';
     document.getElementById('content').style.display='';
-    document.getElementById('lastUpdated').textContent='총 '+allData.length+'건 (중복제거 후)';
-    renderSummary();
+    document.getElementById('hdrInfo').textContent=`전체 ${allData.length}건`;
+    renderSummary(allData);
+    buildMonthPicker(allData);
     render();
   })
   .catch(e=>{
