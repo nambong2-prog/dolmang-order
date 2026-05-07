@@ -1002,12 +1002,13 @@ function renderPreview0(){
   document.getElementById('b03kg').textContent=c3;
   document.getElementById('b05kg').textContent=c5;
   const tbody=document.getElementById('tbody0');tbody.innerHTML='';
-  const platColor={'쿠팡':'#e8002d','스마트스토어':'#03c75a','발주방':'#5f4bb6','당근마켓':'#FF6F00'};
+  const platColor={'쿠팡':'#e8002d','스마트스토어':'#03c75a','발주방':'#1a73e8','당근마켓':'#f59e0b'};
   orders0.forEach((o,i)=>{
     const a=o.addr.length>28?o.addr.slice(0,28)+'…':o.addr;
     const m=o.msg.length>22?o.msg.slice(0,22)+'…':o.msg;
     const pc=platColor[o.platform]||'#888';
-    const platBadge=`<span style="background:${pc};color:#fff;border-radius:3px;padding:1px 5px;font-size:10px;white-space:nowrap">${o.platform==='당근마켓'?'🥕':o.platform==='발주방'?'📞':o.platform==='스마트스토어'?'🟢':'🛒'} ${o.platform}</span>`;
+    const platTextColor=o.platform==='당근마켓'?'#333':'#fff';
+    const platBadge=`<span style="background:${pc};color:${platTextColor};border-radius:3px;padding:1px 5px;font-size:10px;white-space:nowrap">${o.platform==='당근마켓'?'🥕':o.platform==='발주방'?'📞':o.platform==='스마트스토어'?'🟢':'🛒'} ${o.platform}</span>`;
     const tr=document.createElement('tr');
     tr.innerHTML=`<td><button class="del-btn" onclick="delRow0(${i})" title="제외">✕</button></td>
       <td>${i+1}</td><td>${platBadge}</td><td>${esc(o.name)}</td><td>${fmtPhone(o.phone)}</td>
@@ -1715,8 +1716,9 @@ function renderSettle(){
     tr.id='sr_'+r.orderId;
     if(isMulti) tr.style.cssText='background:linear-gradient(90deg,#fff8e1 0%,#fff 60%);border-left:3px solid #f59e0b';
     const qtyCell=isMulti?`<td><span style="background:#f59e0b;color:#fff;font-weight:700;padding:1px 7px;border-radius:10px;font-size:12px">${r.qty}</span></td>`:`<td>${r.qty}</td>`;
-    const plColor={'쿠팡':'#e8001c','스마트스토어':'#03c75a','발주방':'#ff6b35','당근마켓':'#ff7e21'};
-    const plBadge=`<span style="background:${plColor[r.platform]||'#888'};color:#fff;font-size:11px;padding:1px 6px;border-radius:8px;white-space:nowrap">${esc(r.platform||'-')}</span>`;
+    const plColor={'쿠팡':'#e8001c','스마트스토어':'#03c75a','발주방':'#1a73e8','당근마켓':'#f59e0b'};
+    const plTextColor=r.platform==='당근마켓'?'#333':'#fff';
+    const plBadge=`<span style="background:${plColor[r.platform]||'#888'};color:${plTextColor};font-size:11px;padding:1px 6px;border-radius:8px;white-space:nowrap">${esc(r.platform||'-')}</span>`;
     tr.innerHTML=`<td>${i+1}</td><td>${esc(normDate(r.date))}</td><td>${esc(r.name)}</td>
       <td>${plBadge}</td>
       <td>${esc(extractSize(r.option)||r.option)}</td>${qtyCell}
@@ -1910,14 +1912,4 @@ async function loadOrdersForTab0(){
     }
   }catch(e){
     setSyncStatus('err','깃허브 연결 실패 — 로컬 데이터 사용');
-    console.warn('GitHub load failed:',e);
-  }
-  renderSupplyTiers();
-  buildMonthPicker();
-  setPeriod('thisMonth');
-  renderSettle();
-})();
-</script>
-
-</body>
-</html>
+    console.war
