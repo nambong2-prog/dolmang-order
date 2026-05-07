@@ -661,26 +661,13 @@ async function loadFromGitHub(){
     // 정산 불러오기
     const {content:settleData,sha}=await ghRead(GH_SETTLE);
     _settleSHA=sha;
-    if(settleData&&settleData.length>0){
-      const ghData=settleData.map(r=>({...r,date:normDate(r.date)}));
-      const local=loadS();
-      const ghIds=new Set(ghData.map(r=>String(r.orderId)));
-      const localOnly=local.filter(r=>!ghIds.has(String(r.orderId)));
-      const merged=dedupByOrderId([...ghData,...localOnly]);
-      localStorage.setItem(SK,JSON.stringify(merged));
-      if(localOnly.length>0){
-        _settleSHA=await ghWrite(GH_SETTLE,merged,_settleSHA,'병합 저장 ('+merged.length+'건)');
-        setSyncStatus('ok','병합 저장 완료 (깃허브 '+ghData.length+'건 + 로컬 '+localOnly.length+'건)');
-        toast('✅ 병합 완료 — 총 '+merged.length+'건');
-      }else{
-        setSyncStatus('ok','깃허브 불러오기 완료 ('+merged.length+'건)');
-        toast('✅ 깃허브 불러오기 완료 — '+merged.length+'건');
-      }
-      renderSettle();
-    }else{
-      setSyncStatus('ok','깃허브 정산 데이터 없음');
-      toast('깃허브에 저장된 정산 데이터가 없습니다.');
-    }
+    // GitHub 데이터로 로컬 덮어쓰기 (GitHub = 단일 진실 원본)
+    const ghData=(settleData||[]).map(r=>({...r,date:normDate(r.date)}));
+    const deduped=dedupByOrderId(ghData);
+    localStorage.setItem(SK,JSON.stringify(deduped));
+    setSyncStatus('ok','동기화 완료 ('+deduped.length+'건)');
+    toast('✅ 동기화 완료 — '+deduped.length+'건');
+    renderSettle();
   }catch(e){
     setSyncStatus('err','깃허브 연결 실패');
     toast('❌ 깃허브 연결 실패: '+e.message);
@@ -1848,35 +1835,18 @@ async function loadOrdersForTab0(){
 (async function init(){
   // ── 0. 토큰 없으면 설정창 표시 ──
   if(!getToken()){showTokenSettings();return;}
-  // ── 1. 로컬 먼저 확인 — 비어있으면 SEED로 초기화 (버전 업그레이드 시) ──
-  const local=loadS();
-  if(local.length===0&&SEED.length>0){
-    localStorage.setItem(SK,JSON.stringify(SEED));
-    setSyncStatus('ok','초기 데이터 로드됨 ('+SEED.length+'건)');
-    renderSettle();
-    // 새 SEED를 깃허브에도 자동 저장
-    scheduleAutoSave(SEED); // 깃허브에 자동 저장
-    return;
-  }
-  // ── 2. 로컬 데이터 있으면 깃허브 동기화 시도 ──
+  // ── 1. 항상 GitHub 우선 로드 (단일 진실 원본) ──
+  //    어떤 기기에서 열어도 GitHub 데이터로 자동 맞춤
   setSyncStatus('spin','깃허브에서 불러오는 중...');
   try{
     const {content:ghSettle,sha}=await ghRead(GH_SETTLE);
     _settleSHA=sha;
-    if(ghSettle&&ghSettle.length>0){
-      const ghData=ghSettle.map(r=>({...r,date:normDate(r.date)}));
-      const ghIds=new Set(ghData.map(r=>String(r.orderId)));
-      const localOnly=local.filter(r=>!ghIds.has(String(r.orderId)));
-      const merged=dedupByOrderId([...ghData,...localOnly]);
-      localStorage.setItem(SK,JSON.stringify(merged));
-      if(localOnly.length>0){
-        _settleSHA=await ghWrite(GH_SETTLE,merged,_settleSHA,'시작 병합 저장');
-      }
-      setSyncStatus('ok','깃허브 불러오기 완료 ('+merged.length+'건)');
-    }else{
-      setSyncStatus('ok','로컬 데이터 사용 ('+local.length+'건)');
-    }
+    const ghData=(ghSettle||[]).map(r=>({...r,date:normDate(r.date)}));
+    const deduped=dedupByOrderId(ghData);
+    localStorage.setItem(SK,JSON.stringify(deduped)); // 로컬은 캐시 역할만
+    setSyncStatus('ok','동기화 완료 ('+deduped.length+'건)');
   }catch(e){
+    // 인터넷 연결 실패 시만 로컬 fallback
     setSyncStatus('err','깃허브 연결 실패 — 로컬 데이터 사용');
     console.warn('GitHub load failed:',e);
   }
