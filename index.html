@@ -400,10 +400,17 @@ tr.editing td{background:#fffde7!important}
       <button class="btn btn-sm btn-outline" onclick="clearFilter()">초기화</button>
       <span id="filterCount" style="font-size:12px;color:#888;margin-left:4px"></span>
     </div>
+    <!-- 일괄 삭제 바 -->
+    <div id="bulkBar" style="display:none;align-items:center;gap:10px;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:8px 14px;margin-bottom:8px">
+      <span id="bulkCount" style="font-weight:700;color:#92400e"></span>
+      <button class="btn btn-danger btn-sm" onclick="bulkDelete()" style="padding:4px 14px">🗑️ 선택 삭제</button>
+      <button class="btn btn-outline btn-sm" onclick="clearAllChecks()" style="padding:4px 10px">✕ 선택 해제</button>
+    </div>
     <div class="tbl-wrap">
       <table>
         <thead>
           <tr>
+            <th style="width:32px"><input type="checkbox" id="chkAll" title="전체 선택" onchange="toggleAllCheck(this)"></th>
             <th>#</th><th style="cursor:pointer;user-select:none" onclick="toggleDateSort()">날짜 <span id="dateSortArrow">▼</span></th><th>구매자</th><th>채널</th>
             <th>옵션</th><th>수량</th><th>판매가</th><th>매입가</th>
             <th>수수료</th><th>순이익</th><th>마진율</th><th>송장번호</th><th>수정/삭제</th>
@@ -1673,7 +1680,8 @@ function renderSettle(){
     const qtyCell=isMulti?`<td><span style="background:#f59e0b;color:#fff;font-weight:700;padding:1px 7px;border-radius:10px;font-size:12px">${r.qty}</span></td>`:`<td>${r.qty}</td>`;
     const plColor={'쿠팡':'#e8001c','스마트스토어':'#03c75a','발주방':'#1a73e8','당근마켓':'#f59e0b'};
     const plBadge=`<span style="background:${plColor[r.platform]||'#888'};color:${r.platform==='당근마켓'?'#333':'#fff'};font-size:11px;padding:1px 6px;border-radius:8px;white-space:nowrap">${esc(r.platform||'-')}</span>`;
-    tr.innerHTML=`<td>${i+1}</td><td>${esc(normDate(r.date))}</td><td>${esc(r.name)}</td>
+    tr.innerHTML=`<td style="text-align:center"><input type="checkbox" class="row-chk" data-id="${r.orderId}" onchange="updateBulkBar()"></td>
+      <td>${i+1}</td><td>${esc(normDate(r.date))}</td><td>${esc(r.name)}</td>
       <td>${plBadge}</td>
       <td>${esc(extractSize(r.option)||r.option)}</td>${qtyCell}
       <td>${comma(r.salePrice)}원</td><td>${comma(r.costPrice)}원</td><td>${comma(r.commission)}원</td>
@@ -1726,6 +1734,40 @@ function confirmEdit(oid){
     salePrice:sale,costPrice:cost,commission:fee,profit,
     margin:parseFloat(margin.toFixed(1)),trackNum:g('trk').value};
   saveS(data);renderSettle();toast('✅ 수정 완료');
+}
+function toggleAllCheck(cb){
+  document.querySelectorAll('.row-chk').forEach(c=>c.checked=cb.checked);
+  updateBulkBar();
+}
+function updateBulkBar(){
+  const checked=document.querySelectorAll('.row-chk:checked');
+  const all=document.querySelectorAll('.row-chk');
+  const bar=document.getElementById('bulkBar');
+  const allCb=document.getElementById('chkAll');
+  if(checked.length>0){
+    bar.style.display='flex';
+    document.getElementById('bulkCount').textContent=checked.length+'건 선택됨';
+  }else{
+    bar.style.display='none';
+  }
+  if(allCb){allCb.indeterminate=(checked.length>0&&checked.length<all.length);allCb.checked=(checked.length===all.length&&all.length>0);}
+}
+function clearAllChecks(){
+  document.querySelectorAll('.row-chk').forEach(c=>c.checked=false);
+  const allCb=document.getElementById('chkAll');
+  if(allCb){allCb.checked=false;allCb.indeterminate=false;}
+  updateBulkBar();
+}
+async function bulkDelete(){
+  const checked=document.querySelectorAll('.row-chk:checked');
+  if(!checked.length)return;
+  if(!confirm(checked.length+'건을 삭제할까요?'))return;
+  const ids=new Set([...checked].map(c=>c.dataset.id));
+  const data=loadS().filter(r=>!ids.has(String(r.orderId)));
+  saveS(data);
+  _settleSHA=await ghWrite(GH_SETTLE,data,_settleSHA,'일괄 삭제 ('+ids.size+'건)');
+  renderSettle();
+  toast('✅ '+ids.size+'건 삭제 완료');
 }
 function delSettle(oid){
   if(!confirm('이 항목을 삭제하시겠습니까?'))return;
