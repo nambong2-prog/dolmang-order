@@ -1265,65 +1265,6 @@ function downloadSSUpload(){
 /* ======================================================
    TAB 2 — 정산 현황
 ====================================================== */
-function addToSettlement(){
-  if(!orders1.length){toast('처리된 주문이 없습니다.');return;}
-  const matched=orders1.filter(o=>o.trk);
-  if(!matched.length){toast('매칭된 운송장이 없습니다. 먼저 송장처리를 완료하세요.');return;}
-
-  // KST 날짜 입력 (소낭 방식과 동일)
-  const kstToday=todayYMD();
-  const dateInput=prompt('정산 날짜를 입력하세요 (YYYY-MM-DD):', kstToday);
-  if(dateInput===null)return;
-  const fileDate=dateInput.trim()||kstToday;
-
-  const SUPPLY2=getSupplyForDate(fileDate);
-  const data=loadS();
-  const ids=new Set(data.map(r=>String(r.orderId)));
-  let added=0, skipped=0;
-
-  matched.forEach(o=>{
-    // orderId: TRK-운송장번호 기준 (소낭 방식과 동일)
-    const orderId='TRK-'+String(o.trk.trackNum);
-    if(ids.has(orderId)){skipped++;return;}
-
-    const sz=extractSize(o.option);
-    const qty=o.qty||1;
-    // 판매가: 플랫폼별 고정단가 (소낭 방식)
-    const salePrice=((SALE_PRICE[o.platform]||{})[sz]||0)*qty;
-    // 원가: 날짜별 공급가 × qty (소낭 방식)
-    const costPrice=(SUPPLY2[sz]||0)*qty;
-    const feeR=FEE_RT[o.platform]||0;
-    const commission=Math.round(salePrice*feeR);
-    const profit=salePrice-costPrice-commission;
-    const margin=salePrice>0?parseFloat((profit/salePrice*100).toFixed(1)):0;
-
-    data.push({orderId,date:fileDate,name:o.name,
-      platform:o.platform,option:sz||o.option,qty,salePrice,
-      costPrice,commission,profit,margin,
-      trackNum:o.trk.trackNum,carrier:o.trk.carrier});
-    ids.add(orderId);
-    added++;
-  });
-
-  if(added>0){
-    saveS(data);
-    // 정산 완료된 주문 orders0에서 제거
-    const addedTrks=new Set(matched.filter(o=>{
-      const oid='TRK-'+String(o.trk.trackNum);
-      return data.some(r=>r.orderId===oid);
-    }).map(o=>String(o.orderId)));
-    orders0=orders0.filter(o=>!addedTrks.has(String(o.orderId)));
-    if(orders0.length===0){rawWb0s={};hide('preview0');}
-    else renderPreview0();
-    saveOrdersToGitHub();
-    let msg='✅ '+added+'건 정산 추가 완료 (소낭 기준)';
-    if(skipped)msg+=' / 중복 '+skipped+'건 스킵';
-    toast(msg);
-    switchTab(2);
-  }else{
-    toast('ℹ️ 모두 이미 정산에 추가된 주문입니다. (중복 '+skipped+'건)');
-  }
-}
 function toggleHistSection(){
   document.getElementById('histSection').classList.toggle('hidden');
 }
