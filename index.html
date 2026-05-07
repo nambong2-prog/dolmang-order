@@ -782,7 +782,9 @@ async function clearOrders0(){
 function loadS(){
   try{
     const data=JSON.parse(localStorage.getItem(SK)||'[]');
-    const deduped=dedupByOrderId(data);
+    // 합계 행(엑셀 내보내기 footer가 재임포트된 경우) 자동 제거
+    const cleaned=data.filter(r=>String(r.name||'').trim()!=='합계' && String(r.orderId||'').trim()!=='합계');
+    const deduped=dedupByOrderId(cleaned);
     return deduped.map(r=>{
       const margin=Number(r.margin);
       if(!isFinite(margin)){
@@ -1694,13 +1696,10 @@ function renderSettle(){
     tr.id='sr_'+r.orderId;
     if(isMulti) tr.style.cssText='background:linear-gradient(90deg,#fff8e1 0%,#fff 60%);border-left:3px solid #f59e0b';
     const qtyCell=isMulti?`<td><span style="background:#f59e0b;color:#fff;font-weight:700;padding:1px 7px;border-radius:10px;font-size:12px">${r.qty}</span></td>`:`<td>${r.qty}</td>`;
+    const plColor={'쿠팡':'#e8001c','스마트스토어':'#03c75a','발주방':'#ff6b35','당근마켓':'#ff7e21'};
+    const plBadge=`<span style="background:${plColor[r.platform]||'#888'};color:#fff;font-size:11px;padding:1px 6px;border-radius:8px;white-space:nowrap">${esc(r.platform||'-')}</span>`;
     tr.innerHTML=`<td>${i+1}</td><td>${esc(normDate(r.date))}</td><td>${esc(r.name)}</td>
-      <td><select class="edit-input" id="ei_platform" style="width:100px">
-      <option value="쿠팡" ${r.platform==='쿠팡'?'selected':''}>쿠팡</option>
-      <option value="스마트스토어" ${r.platform==='스마트스토어'?'selected':''}>스마트스토어</option>
-      <option value="발주방" ${r.platform==='발주방'?'selected':''}>발주방</option>
-      <option value="당근마켓" ${r.platform==='당근마켓'?'selected':''}>당근마켓</option>
-    </select></td>
+      <td>${plBadge}</td>
       <td>${esc(extractSize(r.option)||r.option)}</td>${qtyCell}
       <td>${comma(r.salePrice)}원</td><td>${comma(r.costPrice)}원</td><td>${comma(r.commission)}원</td>
       <td class="${pc}">${comma(r.profit)}원</td><td>${safeMargin(r.margin)}</td>
@@ -1912,8 +1911,4 @@ async function loadOrdersForTab0(){
       <button onclick="saveTokenAndClose()" style="flex:1;padding:10px;background:#ff6b35;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">저장</button>
       <button onclick="hideTokenModal()" id="tokenCancelBtn" style="padding:10px 16px;background:#f0f0f0;border:none;border-radius:8px;cursor:pointer;font-size:14px">취소</button>
     </div>
-    <p id="tokenStatus" style="color:#e74c3c;font-size:12px;margin-top:8px;min-height:16px"></p>
-  </div>
-</div>
-</body>
-</html>
+    <p id="tokenStatus" style="color:#e74c3c;font-size:12px;margin-top:8px;min-height:1
