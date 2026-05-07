@@ -417,6 +417,21 @@ tr.editing td{background:#fffde7!important}
 
 <div class="toast" id="toast"></div>
 
+<!-- 토큰 설정 모달 — 스크립트보다 먼저 DOM에 있어야 함 -->
+<div id="tokenModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:12px;padding:28px;width:90%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,0.3)">
+    <h3 style="margin-bottom:8px;font-size:18px">⚙️ 깃허브 연결 설정</h3>
+    <p style="color:#666;font-size:13px;margin-bottom:16px">GitHub Personal Access Token을 입력하세요.<br>한 번 저장하면 이 기기에서 자동으로 사용됩니다.</p>
+    <input id="tokenInput" type="password" placeholder="ghp_xxxxxxxxxx..."
+      style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:12px;box-sizing:border-box">
+    <div style="display:flex;gap:8px">
+      <button onclick="saveTokenAndClose()" style="flex:1;padding:10px;background:#ff6b35;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">저장</button>
+      <button onclick="hideTokenModal()" id="tokenCancelBtn" style="padding:10px 16px;background:#f0f0f0;border:none;border-radius:8px;cursor:pointer;font-size:14px">취소</button>
+    </div>
+    <p id="tokenStatus" style="color:#e74c3c;font-size:12px;margin-top:8px;min-height:16px"></p>
+  </div>
+</div>
+
 <script>
 /* ======================================================
    CONSTANTS & CONFIG
@@ -1894,21 +1909,4 @@ async function loadOrdersForTab0(){
     console.warn('GitHub load failed:',e);
   }
   renderSupplyTiers();
-  buildMonthPicker();
-  setPeriod('thisMonth');
-  renderSettle();
-})();
-</script>
-
-<!-- 토큰 설정 모달 -->
-<div id="tokenModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:12px;padding:28px;width:90%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,0.3)">
-    <h3 style="margin-bottom:8px;font-size:18px">⚙️ 깃허브 연결 설정</h3>
-    <p style="color:#666;font-size:13px;margin-bottom:16px">GitHub Personal Access Token을 입력하세요.<br>한 번 저장하면 이 기기에서 자동으로 사용됩니다.</p>
-    <input id="tokenInput" type="password" placeholder="ghp_xxxxxxxxxx..."
-      style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:12px;box-sizing:border-box">
-    <div style="display:flex;gap:8px">
-      <button onclick="saveTokenAndClose()" style="flex:1;padding:10px;background:#ff6b35;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">저장</button>
-      <button onclick="hideTokenModal()" id="tokenCancelBtn" style="padding:10px 16px;background:#f0f0f0;border:none;border-radius:8px;cursor:pointer;font-size:14px">취소</button>
-    </div>
-    <p id="tokenStatus" style="color:#e74c3c;font-size:12px;margin-top:8px;min-height:1
+  bui
